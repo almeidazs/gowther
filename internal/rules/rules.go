@@ -1,17 +1,14 @@
 package rules
 
-// Config is the top-level configuration structure for the linter.
 type Config struct {
-	Schema        string                 `json:"$schema"`
-	Naming        *NamingRuleGroup       `json:"naming"`
-	Complexity    *ComplexityRuleGroup   `json:"complexity"`
+	Schema        string                  `json:"$schema"`
+	Naming        *NamingRuleGroup        `json:"naming"`
+	Complexity    *ComplexityRuleGroup    `json:"complexity"`
 	BestPractices *BestPracticesRuleGroup `json:"bestPractices"`
 	ErrorHandling *ErrorHandlingRuleGroup `json:"errorHandling"`
-	Imports       *ImportsRuleGroup      `json:"imports"`
-	Exclude       []string               `json:"exclude"`
+	Imports       *ImportsRuleGroup       `json:"imports"`
+	Exclude       []string                `json:"exclude"`
 }
-
-// --- Rule Groups ---
 
 type NamingRuleGroup struct {
 	Enabled bool         `json:"enabled"`
@@ -38,12 +35,10 @@ type ImportsRuleGroup struct {
 	Rules   *ImportsRules `json:"rules"`
 }
 
-// --- Rule Collections ---
-
 type NamingRules struct {
-	ExportedIdentifiers   *PatternRule      `json:"exported_identifiers,omitempty"`
-	UnexportedIdentifiers *PatternRule      `json:"unexported_identifiers,omitempty"`
-	ReceiverNames         *MaxLengthRule    `json:"receiver_names,omitempty"`
+	ExportedIdentifiers   *PatternRule   `json:"exported_identifiers,omitempty"`
+	UnexportedIdentifiers *PatternRule   `json:"unexported_identifiers,omitempty"`
+	ReceiverNames         *MaxLengthRule `json:"receiver_names,omitempty"`
 }
 
 type ComplexityRules struct {
@@ -59,17 +54,15 @@ type BestPracticesRules struct {
 }
 
 type ErrorHandlingRules struct {
-	ErrorWrapping     *ErrorWrappingRule      `json:"error_wrapping,omitempty"`
-	ErrorStringFormat *ErrorStringFormatRule  `json:"error_string_format,omitempty"`
-	NoErrorShadowing  *DescriptionRule        `json:"no_error_shadowing,omitempty"`
+	ErrorWrapping     *ErrorWrappingRule     `json:"error_wrapping,omitempty"`
+	ErrorStringFormat *ErrorStringFormatRule `json:"error_string_format,omitempty"`
+	NoErrorShadowing  *DescriptionRule       `json:"no_error_shadowing,omitempty"`
 }
 
 type ImportsRules struct {
 	NoDotImports       *SeverityRule           `json:"no_dot_imports,omitempty"`
 	DisallowedPackages *DisallowedPackagesRule `json:"disallowed_packages,omitempty"`
 }
-
-// --- Individual Rule Structs ---
 
 type SeverityRule struct {
 	Severity string `json:"severity"`
