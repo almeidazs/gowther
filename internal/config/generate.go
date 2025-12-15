@@ -4,8 +4,6 @@ import (
 	"github.com/almeidazs/gowther/internal/rules"
 )
 
-const version = "1.0.0"
-
 func GenDefaultConfig() *rules.Config {
 	config := rules.Config{
 		Schema: "https://json-schema.org/draft/2020-12/schema",
