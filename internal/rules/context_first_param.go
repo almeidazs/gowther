@@ -5,58 +5,52 @@ import (
 	"go/token"
 )
 
-func isContextType(typeExpr ast.Expr) bool {
-	var selector *ast.SelectorExpr
-
-	switch t := typeExpr.(type) {
+func isContextType(expr ast.Expr) bool {
+	switch t := expr.(type) {
 	case *ast.SelectorExpr:
-		selector = t
+		x, ok := t.X.(*ast.Ident)
+
+		return ok && x.Name == "context" && t.Sel.Name == "Context"
 	case *ast.StarExpr:
 		if sel, ok := t.X.(*ast.SelectorExpr); ok {
-			selector = sel
+			x, ok := sel.X.(*ast.Ident)
+
+			return ok && x.Name == "context" && sel.Sel.Name == "Context"
 		}
-	}
-
-	if selector == nil {
-		return false
-	}
-
-	if x, ok := selector.X.(*ast.Ident); ok {
-		return x.Name == "context" && selector.Sel.Name == "Context"
 	}
 
 	return false
 }
 
-func CheckContextFirstParam(f *ast.File, fset *token.FileSet) []Issue {
-	var issues []Issue
-
+func CheckContextFirstParam(
+	f *ast.File,
+	fset *token.FileSet,
+	out []Issue,
+) []Issue {
 	ast.Inspect(f, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
+
 		if !ok {
 			return true
 		}
 
-		if fn.Type == nil || fn.Type.Params == nil || len(fn.Type.Params.List) < 1 {
+		params := fn.Type.Params
+
+		if params == nil || len(params.List) < 2 {
 			return true
 		}
 
-		for i, param := range fn.Type.Params.List {
-			if i == 0 {
-				continue
-			}
-
-			if isContextType(param.Type) {
-				issues = append(issues, Issue{
-					Pos:     fset.Position(param.Pos()),
+		for i := 1; i < len(params.List); i++ {
+			if isContextType(params.List[i].Type) {
+				out = append(out, Issue{
+					Pos:     fset.Position(params.List[i].Pos()),
 					Message: "context.Context should be the first parameter",
 				})
 			}
-
 		}
 
 		return true
 	})
 
-	return issues
+	return out
 }

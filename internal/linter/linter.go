@@ -1,95 +1,203 @@
 package linter
 
 import (
-	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
 	"path/filepath"
-	"strings"
+	"runtime"
+	"sync"
+	"sync/atomic"
 
 	"github.com/almeidazs/serenity/internal/rules"
 )
 
 type Linter struct {
-	Write  bool
-	Unsafe bool
-	Fset   *token.FileSet
-	Config *rules.Config
-	Issues []rules.Issue
+	Write     bool
+	Unsafe    bool
+	MaxIssues int // Para ser ilimitado = 0
+	Config    *rules.Config
 }
 
-func New(write, unsafe bool, config *rules.Config) *Linter {
+func New(write, unsafe bool, config *rules.Config, maxIssues int) *Linter {
 	return &Linter{
-		Write:  write,
-		Unsafe: unsafe,
-		Fset:   token.NewFileSet(),
-		Config: config,
-		Issues: []rules.Issue{},
+		Write:     write,
+		Unsafe:    unsafe,
+		Config:    config,
+		MaxIssues: maxIssues,
 	}
 }
 
-func (l *Linter) ProcessPath(path string) ([]rules.Issue, error) {
-	info, err := os.Stat(path)
+func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
+	info, err := os.Stat(root)
+	
 	if err != nil {
-		return nil, fmt.Errorf("error to read file info: %w", err)
+		return nil, err
 	}
 
-	var issues []rules.Issue
-	if info.IsDir() {
-		err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+	if !info.IsDir() {
+		return processSingleFile(root)
+	}
+
+	workers := runtime.GOMAXPROCS(0)
+
+	paths := make(chan string, workers*4)
+	results := make(chan []rules.Issue, workers)
+	done := make(chan struct{})
+
+	var total int64
+	var wg sync.WaitGroup
+
+	wg.Add(workers)
+
+	for range workers {
+		go func() {
+			defer wg.Done()
+
+			fset := token.NewFileSet()
+			local := make([]rules.Issue, 0, 32)
+
+			for {
+				select {
+				case <-done:
+					return
+				case path, ok := <-paths:
+					if !ok {
+						return
+					}
+
+					src, err := os.ReadFile(path)
+
+					if err != nil {
+						continue
+					}
+
+					f, err := parser.ParseFile(
+						fset,
+						path,
+						src,
+						parser.SkipObjectResolution,
+					)
+
+					if err != nil {
+						continue
+					}
+
+					local = rules.CheckContextFirstParam(f, fset, local[:0])
+
+					if len(local) > 0 {
+						out := make([]rules.Issue, len(local))
+
+						copy(out, local)
+
+						select {
+						case results <- out:
+						case <-done:
+							return
+						}
+					}
+				}
+			}
+		}()
+	}
+
+	go func() {
+		filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
-				return fmt.Errorf("error to read %v: %w", p, err)
+				return nil
 			}
 
-			if info.IsDir() {
-				if info.Name() == "vendor" || info.Name() == ".git" {
+			select {
+			case <-done:
+				return filepath.SkipAll
+			default:
+			}
+
+			if d.IsDir() {
+				name := d.Name()
+
+				if name == "vendor" || name == ".git" {
 					return filepath.SkipDir
 				}
 
 				return nil
 			}
 
-			if strings.HasSuffix(p, ".go") && !strings.Contains(p, "vendor/") {
-				issues, err = l.ProcessFile(p)
-				if err != nil {
-					return err
+			if len(path) > 3 && path[len(path)-3:] == ".go" {
+				select {
+				case paths <- path:
+				case <-done:
+					return filepath.SkipAll
 				}
-
-				return nil
 			}
 
 			return nil
 		})
-		if err != nil {
-			return nil, err
+
+		close(paths)
+	}()
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	limit := l.MaxIssues
+	final := make([]rules.Issue, 0, min(limit, 128))
+
+	for batch := range results {
+		if limit == 0 {
+			final = append(final, batch...)
+			continue
+
 		}
 
-		return issues, nil
+		cur := int(atomic.LoadInt64(&total))
+
+		remaining := limit - cur
+
+		if remaining <= 0 {
+			close(done)
+
+			break
+		}
+
+		if len(batch) <= remaining {
+			final = append(final, batch...)
+			atomic.AddInt64(&total, int64(len(batch)))
+		} else {
+			final = append(final, batch[:remaining]...)
+
+			atomic.StoreInt64(&total, int64(limit))
+
+			close(done)
+
+			break
+		}
 	}
 
-	issues, err = l.ProcessFile(path)
+	return final, nil
+}
+
+func processSingleFile(path string) ([]rules.Issue, error) {
+	src, err := os.ReadFile(path)
+
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("corintia")
-	fmt.Println(issues)
-	return issues, nil
-}
+	fset := token.NewFileSet()
 
-func (l *Linter) ProcessFile(filename string) ([]rules.Issue, error) {
-	src, err := os.ReadFile(filename)
+	f, err := parser.ParseFile(
+		fset,
+		path,
+		src,
+		parser.SkipObjectResolution,
+	)
+	
 	if err != nil {
-		return nil, fmt.Errorf("error to read file: %w", err)
+		return nil, err
 	}
 
-	f, err := parser.ParseFile(l.Fset, filename, src, parser.ParseComments)
-	if err != nil {
-		return nil, fmt.Errorf("parse error in %s: %v", filename, err)
-	}
-
-	l.Issues = append(l.Issues, rules.CheckContextFirstParam(f, l.Fset)...)
-
-	return l.Issues, nil
+	return rules.CheckContextFirstParam(f, fset, nil), nil
 }

@@ -50,7 +50,14 @@ func check(cmd *cobra.Command, args []string) error {
 	}
 
 	var issues []rules.Issue
-	l := linter.New(checkWrite, checkUnsafe, linterCfg)
+
+	maxIssues, err := cmd.Flags().GetInt("max-issues")
+
+	if err != nil {
+		return err
+	}
+
+	l := linter.New(checkWrite, checkUnsafe, linterCfg, maxIssues)
 
 	for _, v := range args {
 		if v == "" || v == "." {
