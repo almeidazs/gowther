@@ -29,13 +29,11 @@ func CheckContextFirstParam(
 ) []Issue {
 	ast.Inspect(f, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
-
 		if !ok {
 			return true
 		}
 
 		params := fn.Type.Params
-
 		if params == nil || len(params.List) < 2 {
 			return true
 		}
@@ -45,7 +43,12 @@ func CheckContextFirstParam(
 				out = append(out, Issue{
 					Pos:     fset.Position(params.List[i].Pos()),
 					Message: "context.Context should be the first parameter",
+					Fix: func() {
+						FixContextFirstParam(fn)
+					},
 				})
+
+				break
 			}
 		}
 
@@ -53,4 +56,39 @@ func CheckContextFirstParam(
 	})
 
 	return out
+}
+
+func FixContextFirstParam(fn *ast.FuncDecl) bool {
+	params := fn.Type.Params
+
+	if params == nil || len(params.List) < 2 {
+		return false
+	}
+
+	ctxIndex := findContextParam(params.List)
+
+	if ctxIndex <= 0 {
+		return false
+	}
+
+	ctxField := params.List[ctxIndex]
+
+	copy(
+		params.List[1:ctxIndex+1],
+		params.List[0:ctxIndex],
+	)
+
+	params.List[0] = ctxField
+
+	return true
+}
+
+func findContextParam(fields []*ast.Field) int {
+	for i, f := range fields {
+		if isContextType(f.Type) {
+			return i
+		}
+	}
+	
+	return -1
 }

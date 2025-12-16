@@ -111,6 +111,7 @@ type DisallowedPackagesRule struct {
 }
 
 type Issue struct {
-	Pos     token.Position
 	Message string
+	Fix     func()
+	Pos     token.Position
 }

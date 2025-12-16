@@ -1,6 +1,8 @@
 package linter
 
 import (
+	"bytes"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"os"
@@ -32,7 +34,6 @@ func New(write, unsafe bool, config *rules.Config, maxIssues int, maxFileSize in
 
 func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	info, err := os.Stat(root)
-
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 			return nil, nil
 		}
 
-		return processSingleFile(root)
+		return l.processSingleFile(root)
 	}
 
 	workers := runtime.GOMAXPROCS(0)
@@ -51,12 +52,10 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	results := make(chan []rules.Issue, workers)
 
 	done := make(chan struct{})
-
 	var stopOnce sync.Once
 
 	var total int64
 	var wg sync.WaitGroup
-
 	wg.Add(workers)
 
 	for range workers {
@@ -76,7 +75,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 					}
 
 					src, err := os.ReadFile(path)
-
 					if err != nil {
 						continue
 					}
@@ -87,22 +85,37 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 						src,
 						parser.SkipObjectResolution,
 					)
-
 					if err != nil {
 						continue
 					}
 
 					local = rules.CheckContextFirstParam(f, fset, local[:0])
 
-					if len(local) > 0 {
-						out := make([]rules.Issue, len(local))
-						copy(out, local)
+					if len(local) == 0 {
+						continue
+					}
 
-						select {
-						case results <- out:
-						case <-done:
-							return
+					if l.Write {
+						for i := range local {
+							if local[i].Fix != nil {
+								local[i].Fix()
+							}
 						}
+
+						var buf bytes.Buffer
+
+						if err := format.Node(&buf, fset, f); err == nil {
+							_ = os.WriteFile(path, buf.Bytes(), 0644)
+						}
+					}
+
+					out := make([]rules.Issue, len(local))
+					copy(out, local)
+
+					select {
+					case results <- out:
+					case <-done:
+						return
 					}
 				}
 			}
@@ -126,7 +139,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 				case "vendor", ".git":
 					return filepath.SkipDir
 				}
-
 				return nil
 			}
 
@@ -136,7 +148,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 
 			if l.MaxFileSize > 0 {
 				info, err := d.Info()
-
 				if err == nil && info.Size() > l.MaxFileSize {
 					return nil
 				}
@@ -156,12 +167,10 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 
 	go func() {
 		wg.Wait()
-
 		close(results)
 	}()
 
 	capHint := 128
-
 	if l.MaxIssues > 0 && l.MaxIssues < capHint {
 		capHint = l.MaxIssues
 	}
@@ -179,7 +188,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 
 		if remaining <= 0 {
 			stopOnce.Do(func() { close(done) })
-
 			break
 		}
 
@@ -190,7 +198,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 			final = append(final, batch[:remaining]...)
 			atomic.StoreInt64(&total, int64(l.MaxIssues))
 			stopOnce.Do(func() { close(done) })
-
 			break
 		}
 	}
@@ -198,7 +205,7 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	return final, nil
 }
 
-func processSingleFile(path string) ([]rules.Issue, error) {
+func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 	src, err := os.ReadFile(path)
 
 	if err != nil {
@@ -206,12 +213,28 @@ func processSingleFile(path string) ([]rules.Issue, error) {
 	}
 
 	fset := token.NewFileSet()
-
 	f, err := parser.ParseFile(fset, path, src, parser.SkipObjectResolution)
-
+	
 	if err != nil {
 		return nil, err
 	}
 
-	return rules.CheckContextFirstParam(f, fset, nil), nil
+	issues := rules.CheckContextFirstParam(f, fset, nil)
+
+	if l.Write && len(issues) > 0 {
+		for i := range issues {
+			if issues[i].Fix != nil {
+				issues[i].Fix()
+			}
+		}
+
+		var buf bytes.Buffer
+
+		if err := format.Node(&buf, fset, f); err == nil {
+			_ = os.WriteFile(path, buf.Bytes(), 0644)
+		}
+
+	}
+
+	return issues, nil
 }
