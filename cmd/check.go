@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"os"
@@ -17,11 +18,13 @@ var checkCmd = &cobra.Command{
 	Short: "Check code for issues",
 }
 
-var checkWrite, checkUnsafe bool
+var maxFileSize int64
+var write, unsafe bool
 
 func init() {
-	checkCmd.Flags().BoolVarP(&checkUnsafe, "unsafe", "u", false, "Apply unsafe fixes")
-	checkCmd.Flags().BoolVarP(&checkWrite, "write", "w", false, "Write changes to files")
+	checkCmd.Flags().BoolVarP(&unsafe, "unsafe", "u", false, "Apply unsafe fixes")
+	checkCmd.Flags().BoolVarP(&write, "write", "w", false, "Write changes to files")
+	checkCmd.Flags().Int64VarP(&maxFileSize, "max-file-size", "m", int64(0), "Use a custom maximum file size in the check")
 
 	rootCmd.AddCommand(checkCmd)
 }
@@ -59,7 +62,7 @@ func Check(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	l := linter.New(checkWrite, checkUnsafe, linterCfg, maxIssues, linterCfg.MaxFileSize)
+	l := linter.New(write, unsafe, linterCfg, maxIssues, cmp.Or(maxFileSize, linterCfg.MaxFileSize))
 
 	for _, v := range args {
 		if v == "" || v == "." {
@@ -72,6 +75,7 @@ func Check(cmd *cobra.Command, args []string) error {
 		}
 
 		i, err := l.ProcessPath(v)
+
 		if err != nil {
 			return err
 		}
