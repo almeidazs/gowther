@@ -89,6 +89,6 @@ func findContextParam(fields []*ast.Field) int {
 			return i
 		}
 	}
-	
+
 	return -1
 }

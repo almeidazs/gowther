@@ -21,7 +21,7 @@ func Exec() {
 
 func init() {
 	rootCmd.PersistentFlags().String("color", "auto", "Color output: auto, off, force")
-	
+
 	rootCmd.PersistentFlags().Bool("verbose", false, "Print additional diagnostics and processed files")
 
 	rootCmd.PersistentFlags().String("config", "", "Path to configuration file (Auto-discovered if omitted)")

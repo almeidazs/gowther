@@ -30,11 +30,13 @@ func Check(cmd *cobra.Command, args []string) error {
 	var linterCfg *rules.Config
 
 	path, err := config.GetConfigFilePath()
+
 	if err != nil {
 		return err
 	}
 
 	exists, err := config.CheckHasConfigFile(path)
+
 	if err != nil {
 		return err
 	}
@@ -42,7 +44,7 @@ func Check(cmd *cobra.Command, args []string) error {
 	linterCfg = config.GenDefaultConfig()
 
 	if exists {
-		cfg, err := config.ReadConfigFile(path)
+		cfg, err := config.ReadConfig(path)
 		if err != nil {
 			return err
 		}

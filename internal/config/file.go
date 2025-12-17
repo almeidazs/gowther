@@ -9,59 +9,60 @@ import (
 	"github.com/serenitysz/serenity/internal/rules"
 )
 
-func GetConfigFilePath() (path string, err error) {
-	path, err = os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("error to get user working directory: %w", err)
+func GetConfigFilePath() (string, error) {
+	if path := os.Getenv("SERENITY_CONFIG_PATH"); path != "" {
+		return path, nil
 	}
 
-	return filepath.Join(path, "serenity.json"), nil
+	wd, err := os.Getwd()
+
+	if err != nil {
+		return "", fmt.Errorf("cannot get working directory: %w", err)
+	}
+
+	return filepath.Join(wd, "serenity.json"), nil
 }
 
-func CreateConfigFile(cfg *rules.Config, path string) error {
-	_, err := os.Create(path)
+func CreateConfigFile(config *rules.Config, path string) error {
+	data, err := json.Marshal(config)
+
 	if err != nil {
-		return fmt.Errorf("error creating config file: %w", err)
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error marshalling JSON: %v", err)
-	}
-
-	err = os.WriteFile("serenity.json", jsonData, 0o644)
-	if err != nil {
-		return fmt.Errorf("error writing serenity.json: %v", err)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
 	return nil
 }
 
 func CheckHasConfigFile(path string) (bool, error) {
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
+	_, err := os.Stat(path)
 
-		return false, fmt.Errorf("error to get file info: %w", err)
+	if err == nil {
+		return true, nil
 	}
 
-	return true, nil
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
 }
 
-func ReadConfigFile(path string) (*rules.Config, error) {
-	var cfg *rules.Config
-	fileBytes, err := os.ReadFile(path)
+func ReadConfig(path string) (*rules.Config, error) {
+	data, err := os.ReadFile(path)
+
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("config file '%s' not found", path)
-		}
-		return nil, fmt.Errorf("error reading config file: %w", err)
+		return nil, err
 	}
 
-	if err := json.Unmarshal(fileBytes, &cfg); err != nil {
-		return nil, fmt.Errorf("error parsing config file json: %w", err)
+	var config rules.Config
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
 	}
 
-	return cfg, nil
+	return &config, nil
 }

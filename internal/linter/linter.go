@@ -214,7 +214,7 @@ func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, src, parser.SkipObjectResolution)
-	
+
 	if err != nil {
 		return nil, err
 	}

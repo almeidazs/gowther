@@ -9,9 +9,9 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initializes serenity, creating a serenity.json configuration file.",
+	Short: "Create a new Serenity project by creating a serenity.json file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runInit()
+		return createSerenity()
 	},
 }
 
@@ -19,28 +19,27 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-func runInit() error {
+func createSerenity() error {
 	path, err := config.GetConfigFilePath()
+
 	if err != nil {
 		return err
 	}
 
 	exists, err := config.CheckHasConfigFile(path)
-	if err != nil {
-		return fmt.Errorf("error checking for config file: %w", err)
-	}
 
-	if exists {
-		fmt.Println("Config file serenity.json already exists.")
+	if exists || err != nil {
 		return nil
 	}
 
 	fmt.Println("Creating default serenity.json config file...")
+
 	cfg := config.GenDefaultConfig()
 
 	if err := config.CreateConfigFile(cfg, path); err != nil {
 		return err
 	}
+
 	fmt.Println("Config file created successfully.")
 
 	return nil
