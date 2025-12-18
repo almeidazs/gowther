@@ -91,6 +91,7 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 
 					local = rules.CheckContextFirstParam(f, fset, local[:0])
 					local = rules.CheckNoDotImports(f, fset, local)
+					local = rules.CheckMaxParams(f, fset, local)
 
 					if len(local) == 0 {
 						continue
@@ -220,6 +221,7 @@ func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 
 	issues := rules.CheckContextFirstParam(f, fset, nil)
 	issues = rules.CheckNoDotImports(f, fset, issues)
+	issues = rules.CheckMaxParams(f, fset, issues)
 
 	if l.Write && len(issues) > 0 {
 		for i := range issues {
