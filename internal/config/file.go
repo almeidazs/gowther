@@ -48,18 +48,3 @@ func CheckHasConfigFile(path string) (bool, error) {
 
 	return false, err
 }
-
-func ReadConfig(path string) (*rules.LinterOptions, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var config rules.LinterOptions
-
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
-	}
-
-	return &config, nil
-}

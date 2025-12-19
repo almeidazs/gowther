@@ -4,26 +4,18 @@ import "github.com/serenitysz/serenity/internal/rules"
 
 func GenDefaultConfig() *rules.LinterOptions {
 	var OneMBInBytes int64 = 1 * 1024 * 1024
-	var maxParams int8 = 5
 
 	config := rules.LinterOptions{
 		File: &rules.GoFileOptions{
 			MaxFileSize: &OneMBInBytes, Exclude: &[]string{"**/vendor/**", "**/*.test.go"},
-		}, Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/1.0.0.json", Linter: rules.LinterRules{
+		},
+		Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/1.0.0.json",
+		Linter: rules.LinterRules{
 			Use: Bool(true), Rules: &rules.LinterRulesGroup{
 				UseRecommended: Bool(true),
-				Imports: &rules.ImportRulesGroup{
-					NoDotImports: &rules.LinterBaseRule{Severity: "error"},
-				},
-				BestPractices: &rules.BestPracticesRulesGroup{
-					UseContextInFirstParam: &rules.LinterBaseRule{Severity: "warn"},
-					MaxParams: &rules.MaxParams{
-						Quantity: &maxParams,
-					},
-				},
 			},
 			Issues: &rules.LinterIssuesOptions{
-				Max: Int16(15),
+				Max: Int16(20),
 				Use: Bool(true),
 			},
 		},

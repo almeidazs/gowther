@@ -18,8 +18,10 @@ var checkCmd = &cobra.Command{
 	Short: "Check code for issues",
 }
 
-var maxFileSize int64
-var write, unsafe bool
+var (
+	maxFileSize   int64
+	write, unsafe bool
+)
 
 func init() {
 	checkCmd.Flags().BoolVarP(&unsafe, "unsafe", "u", false, "Apply unsafe fixes")
@@ -33,13 +35,11 @@ func Check(cmd *cobra.Command, args []string) error {
 	var linterCfg *rules.LinterOptions
 
 	path, err := config.GetConfigFilePath()
-
 	if err != nil {
 		return err
 	}
 
 	exists, err := config.CheckHasConfigFile(path)
-
 	if err != nil {
 		return err
 	}
@@ -54,10 +54,11 @@ func Check(cmd *cobra.Command, args []string) error {
 		linterCfg = cfg
 	}
 
+	config.ApplyRecommended(linterCfg)
+
 	var issues []rules.Issue
 
 	maxIssues, err := cmd.Flags().GetInt("max-issues")
-
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,6 @@ func Check(cmd *cobra.Command, args []string) error {
 		}
 
 		i, err := l.ProcessPath(v)
-
 		if err != nil {
 			return err
 		}
