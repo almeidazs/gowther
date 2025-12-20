@@ -45,8 +45,20 @@ func ApplyRecommended(cfg *rules.LinterOptions) {
 		rulesGroup.BestPractices.UseContextInFirstParam = &rules.LinterBaseRule{Severity: "warn"}
 	}
 	if rulesGroup.BestPractices.MaxParams == nil {
-
 		var q int8 = 5
 		rulesGroup.BestPractices.MaxParams = &rules.MaxParams{Quantity: &q}
+	}
+
+	if rulesGroup.Complexity == nil {
+		rulesGroup.Complexity = &rules.ComplexityRulesGroup{}
+	}
+
+	if rulesGroup.Complexity.MaxFuncLines == nil {
+		rulesGroup.Complexity.MaxFuncLines = &rules.AnyMaxValueBasedRule{Severity: "warn"}
+	}
+
+	if rulesGroup.Complexity.MaxFuncLines.Max == nil {
+		m := 20
+		rulesGroup.Complexity.MaxFuncLines.Max = &m
 	}
 }

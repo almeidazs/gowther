@@ -21,7 +21,6 @@ func init() {
 
 func createSerenity() error {
 	path, err := config.GetConfigFilePath()
-
 	if err != nil {
 		return err
 	}

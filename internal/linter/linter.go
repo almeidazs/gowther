@@ -16,6 +16,7 @@ import (
 
 	"github.com/serenitysz/serenity/internal/rules"
 	"github.com/serenitysz/serenity/internal/rules/bestpractices"
+	"github.com/serenitysz/serenity/internal/rules/complexity"
 	"github.com/serenitysz/serenity/internal/rules/imports"
 )
 
@@ -42,6 +43,92 @@ const (
 	initialFileIssueCap = 0
 	finalFileIssueCap   = 32
 )
+
+func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	fset := token.NewFileSet()
+	return l.analyze(analysisParams{
+		path: path,
+		src:  src,
+		fset: fset,
+		shouldStop: func(currentLocalCount int) bool {
+			return l.MaxIssues > 0 && currentLocalCount >= l.MaxIssues
+		},
+	})
+}
+
+type analysisParams struct {
+	path       string
+	src        []byte
+	fset       *token.FileSet
+	shouldStop func(int) bool
+}
+
+func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
+	f, err := parser.ParseFile(params.fset, params.path, params.src, parser.SkipObjectResolution)
+	if err != nil {
+		return nil, err
+	}
+
+	if l.Config.Linter.Use != nil && !*l.Config.Linter.Use {
+		return nil, nil
+	}
+
+	issues := make([]rules.Issue, initialFileIssueCap, finalFileIssueCap)
+
+	runner := rules.Runner{
+		File: f,
+		Fset: params.fset,
+		Cfg:  l.Config,
+	}
+
+	if impIssues := imports.CheckNoDotImports(&runner); len(impIssues) > 0 {
+		issues = append(issues, impIssues...)
+	}
+
+	ast.Inspect(f, func(n ast.Node) bool {
+		if params.shouldStop != nil && params.shouldStop(len(issues)) {
+			return false
+		}
+		runner.Node = n
+
+		if res := bestpractices.CheckContextFirstParamNode(&runner); len(res) > 0 {
+			issues = append(issues, res...)
+		}
+
+		if res := bestpractices.CheckMaxParamsNode(&runner); len(res) > 0 {
+			issues = append(issues, res...)
+		}
+
+		if res := complexity.CheckMaxFuncLinesNode(&runner); len(res) > 0 {
+			issues = append(issues, res...)
+		}
+
+		return true
+	})
+
+	if l.Write && len(issues) > 0 {
+		for i := range issues {
+			if issues[i].Fix != nil {
+				issues[i].Fix()
+			}
+		}
+
+		var buf bytes.Buffer
+
+		if err := format.Node(&buf, params.fset, f); err == nil {
+			if err := os.WriteFile(params.path, buf.Bytes(), defaultFileMode); err != nil {
+				return issues, fmt.Errorf("failed to write file %s: %w", params.path, err)
+			}
+		}
+	}
+
+	return issues, nil
+}
 
 func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	info, err := os.Stat(root)
@@ -77,8 +164,6 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 			fset := token.NewFileSet()
 
 			for {
-				local := make([]rules.Issue, initialFileIssueCap, finalFileIssueCap)
-
 				select {
 				case <-done:
 					return
@@ -92,71 +177,31 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 						continue
 					}
 
-					f, err := parser.ParseFile(
-						fset,
-						path,
-						src,
-						parser.SkipObjectResolution,
-					)
-					if err != nil {
-						continue
-					}
-
-					if l.Config.Linter.Use != nil && !*l.Config.Linter.Use {
-						continue
-					}
-
-					runner := rules.Runner{
-						File: f,
-						Fset: fset,
-						Cfg:  l.Config,
-					}
-
-					if impIssues := imports.CheckNoDotImports(&runner); len(impIssues) > 0 {
-						local = append(local, impIssues...)
-					}
-
-					ast.Inspect(f, func(n ast.Node) bool {
-						if l.MaxIssues > 0 && int(atomic.LoadInt64(&total)) >= l.MaxIssues {
-							return false
-						}
-						runner.Node = n
-						if res := bestpractices.CheckContextFirstParamNode(&runner); len(res) > 0 {
-							local = append(local, res...)
-						}
-						if res := bestpractices.CheckMaxParamsNode(&runner); len(res) > 0 {
-							local = append(local, res...)
-						}
-
-						return true
+					localIssues, err := l.analyze(analysisParams{
+						path: path,
+						src:  src,
+						fset: fset,
+						shouldStop: func(currentLocalCount int) bool {
+							return l.MaxIssues > 0 && int(atomic.LoadInt64(&total)) >= l.MaxIssues
+						},
 					})
+					if err != nil {
+						if localIssues != nil {
+							fmt.Fprintf(os.Stderr, "%v\n", err)
+						}
+						continue
+					}
 
-					if len(local) == 0 {
+					if len(localIssues) == 0 {
 						continue
 					}
 
 					if l.MaxIssues > 0 {
-						atomic.AddInt64(&total, int64(len(local)))
+						atomic.AddInt64(&total, int64(len(localIssues)))
 					}
 
-					if l.Write {
-						for i := range local {
-							if local[i].Fix != nil {
-								local[i].Fix()
-							}
-						}
-
-						var buf bytes.Buffer
-
-						if err := format.Node(&buf, fset, f); err == nil {
-							if err := os.WriteFile(path, buf.Bytes(), defaultFileMode); err != nil {
-								fmt.Fprintf(os.Stderr, "failed to write file %s: %v\n", path, err)
-							}
-						}
-					}
-
-					out := make([]rules.Issue, len(local))
-					copy(out, local)
+					out := make([]rules.Issue, len(localIssues))
+					copy(out, localIssues)
 
 					select {
 					case results <- out:
@@ -249,67 +294,4 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	}
 
 	return final, nil
-}
-
-func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
-	src, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, path, src, parser.SkipObjectResolution)
-	if err != nil {
-		return nil, err
-	}
-
-	if l.Config.Linter.Use != nil && !*l.Config.Linter.Use {
-		return nil, nil
-	}
-
-	var issues []rules.Issue
-
-	runner := rules.Runner{
-		File: f,
-		Fset: fset,
-		Cfg:  l.Config,
-	}
-
-	if impIssues := imports.CheckNoDotImports(&runner); len(impIssues) > 0 {
-		issues = append(issues, impIssues...)
-	}
-
-	ast.Inspect(f, func(n ast.Node) bool {
-		if l.MaxIssues > 0 && len(issues) >= l.MaxIssues {
-			return false
-		}
-		runner.Node = n
-		if res := bestpractices.CheckContextFirstParamNode(&runner); len(res) > 0 {
-			issues = append(issues, res...)
-		}
-
-		if res := bestpractices.CheckMaxParamsNode(&runner); len(res) > 0 {
-			issues = append(issues, res...)
-		}
-
-		return true
-	})
-
-	if l.Write && len(issues) > 0 {
-		for i := range issues {
-			if issues[i].Fix != nil {
-				issues[i].Fix()
-			}
-		}
-
-		var buf bytes.Buffer
-
-		if err := format.Node(&buf, fset, f); err == nil {
-			if err := os.WriteFile(path, buf.Bytes(), defaultFileMode); err != nil {
-				return nil, fmt.Errorf("failed to write file %s: %w", path, err)
-			}
-		}
-	}
-
-	return issues, nil
 }
