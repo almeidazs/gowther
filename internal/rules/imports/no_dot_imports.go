@@ -1,18 +1,12 @@
 package imports
 
 import (
-	"go/ast"
-
 	"github.com/serenitysz/serenity/internal/rules"
 )
 
 func CheckNoDotImports(runner *rules.Runner) []rules.Issue {
-	var issues []rules.Issue
+	issues := make([]rules.Issue, 0, len(runner.File.Imports))
 	imports := runner.Cfg.Linter.Rules.Imports
-
-	if err := rules.VerifyIssues(runner.Cfg, issues); err != nil {
-		return issues
-	}
 
 	if imports == nil ||
 		(imports.Use != nil && !*imports.Use) ||
@@ -20,21 +14,21 @@ func CheckNoDotImports(runner *rules.Runner) []rules.Issue {
 		return issues
 	}
 
+	maxIssues := rules.GetMaxIssues(runner.Cfg)
+
 	for _, i := range runner.File.Imports {
 		if i.Name != nil && i.Name.Name == "." {
+
+			if maxIssues > 0 && int16(len(issues)) >= maxIssues {
+				break
+			}
+
 			issues = append(issues, rules.Issue{
 				Pos:     runner.Fset.Position(i.Name.NamePos),
 				Message: "Imports should not be named with '.'",
-				Fix: func() {
-					FixNoDotImports(runner, i)
-				},
 			})
 		}
 	}
 
 	return issues
-}
-
-func FixNoDotImports(runner *rules.Runner, i *ast.ImportSpec) {
-	i.Name = nil
 }

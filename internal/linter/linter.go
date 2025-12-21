@@ -81,9 +81,11 @@ func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
 	issues := make([]rules.Issue, initialFileIssueCap, finalFileIssueCap)
 
 	runner := rules.Runner{
-		File: f,
-		Fset: params.fset,
-		Cfg:  l.Config,
+		File:    f,
+		Fset:    params.fset,
+		Cfg:     l.Config,
+		Autofix: l.Write || rules.CanAutoFix(l.Config),
+		Unsafe:  l.Unsafe,
 	}
 
 	if impIssues := imports.CheckNoDotImports(&runner); len(impIssues) > 0 {
@@ -111,13 +113,7 @@ func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
 		return true
 	})
 
-	if l.Write && len(issues) > 0 {
-		for i := range issues {
-			if issues[i].Fix != nil {
-				issues[i].Fix()
-			}
-		}
-
+	if runner.Modified {
 		var buf bytes.Buffer
 
 		if err := format.Node(&buf, params.fset, f); err == nil {

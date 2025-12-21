@@ -28,6 +28,16 @@ func ApplyRecommended(cfg *rules.LinterOptions) {
 		return
 	}
 
+	assistance := cfg.Assistance
+	if assistance == nil {
+		use := true
+
+		assistance = &rules.AssistanceOptions{
+			Use:     &use,
+			AutoFix: &use,
+		}
+	}
+
 	rulesGroup := cfg.Linter.Rules
 
 	if rulesGroup.Imports == nil {

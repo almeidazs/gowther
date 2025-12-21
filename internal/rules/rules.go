@@ -6,10 +6,13 @@ import (
 )
 
 type Runner struct {
-	File *ast.File
-	Node ast.Node
-	Fset *token.FileSet
-	Cfg  *LinterOptions
+	File     *ast.File
+	Node     ast.Node
+	Fset     *token.FileSet
+	Cfg      *LinterOptions
+	Autofix  bool
+	Unsafe   bool
+	Modified bool
 }
 
 type LinterOptions struct {
@@ -25,6 +28,7 @@ type Issue struct {
 	Message string
 	Fix     func()
 	Pos     token.Position
+	Unsafe  bool
 }
 
 type GoFileOptions struct {

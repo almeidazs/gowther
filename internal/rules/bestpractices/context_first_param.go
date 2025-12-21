@@ -48,21 +48,25 @@ func CheckContextFirstParamNode(runner *rules.Runner) []rules.Issue {
 		return nil
 	}
 
+	maxIssues := rules.GetMaxIssues(runner.Cfg)
+	issues := make([]rules.Issue, 0, len(params.List))
+
 	for i := 1; i < len(params.List); i++ {
 		p := params.List[i]
 
 		if isContextType(p.Type) {
-			return []rules.Issue{{
+			if maxIssues > 0 && int16(len(issues)) >= maxIssues {
+				break
+			}
+
+			issues = append(issues, rules.Issue{
 				Pos:     runner.Fset.Position(p.Pos()),
 				Message: "context.Context should be the first parameter",
-				Fix: func() {
-					FixContextFirstParam(fn)
-				},
-			}}
+			})
 		}
 	}
 
-	return nil
+	return issues
 }
 
 func FixContextFirstParam(fn *ast.FuncDecl) bool {

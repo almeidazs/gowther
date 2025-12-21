@@ -1,19 +1,17 @@
 package rules
 
-import (
-	"errors"
-)
+func CanAutoFix(cfg *LinterOptions) bool {
+	if cfg.Assistance != nil &&
+		cfg.Assistance.Use != nil && *cfg.Assistance.Use &&
+		cfg.Assistance.AutoFix != nil {
+		return *cfg.Assistance.AutoFix
+	}
+	return false
+}
 
-func VerifyIssues(cfg *LinterOptions, issues []Issue) error {
-	var maxIssues int16
-
+func GetMaxIssues(cfg *LinterOptions) int16 {
 	if cfg.Linter.Issues != nil && cfg.Linter.Issues.Max != nil {
-		maxIssues = *cfg.Linter.Issues.Max
+		return *cfg.Linter.Issues.Max
 	}
-
-	if int16(len(issues)) >= maxIssues {
-		return errors.New("issues limit reached")
-	}
-
-	return nil
+	return 0
 }

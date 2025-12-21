@@ -30,6 +30,7 @@ func CheckMaxFuncLinesNode(runner *rules.Runner) []rules.Issue {
 	if !ok || fn.Body == nil {
 		return nil
 	}
+	issues := make([]rules.Issue, 0, 10)
 
 	start := runner.Fset.Position(fn.Pos()).Line
 	end := runner.Fset.Position(fn.End()).Line
@@ -39,8 +40,10 @@ func CheckMaxFuncLinesNode(runner *rules.Runner) []rules.Issue {
 		return nil
 	}
 
-	return []rules.Issue{{
+	issues = append(issues, rules.Issue{
 		Pos:     runner.Fset.Position(fn.Pos()),
 		Message: fmt.Sprintf("functions exceed the maximum line limit of %d (actual: %d)", limit, lines),
-	}}
+	})
+
+	return issues
 }

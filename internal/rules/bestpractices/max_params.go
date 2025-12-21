@@ -27,35 +27,26 @@ func CheckMaxParamsNode(runner *rules.Runner) []rules.Issue {
 	}
 
 	fn, ok := runner.Node.(*ast.FuncDecl)
-	if !ok {
-		return nil
-	}
-
-	params := fn.Type.Params
-	if params == nil {
+	if !ok || fn.Type.Params == nil {
 		return nil
 	}
 
 	var count int16 = 0
-
-	for _, field := range params.List {
-		count += int16(len(field.Names))
-
+	for _, field := range fn.Type.Params.List {
 		if len(field.Names) == 0 {
 			count++
+			continue
 		}
+		count += int16(len(field.Names))
 	}
 
-	if limit > 0 && int8(count) <= limit {
+	if limit > 0 && int16(limit) >= count {
 		return nil
 	}
 
 	return []rules.Issue{{
 		Pos:     runner.Fset.Position(fn.Pos()),
 		Message: "functions exceed the maximum parameter limit",
-		Fix: func() {
-			FixMaxParams(runner, fn, params)
-		},
 	}}
 }
 
