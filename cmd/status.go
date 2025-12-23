@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/serenitysz/serenity/internal/config"
-	"github.com/serenitysz/serenity/internal/utils"
 	"github.com/serenitysz/serenity/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -24,12 +23,6 @@ func init() {
 }
 
 func getStatus() error {
-	cmt, err := utils.GetActualCommit()
-	if err != nil {
-		return err
-	}
-	version.Commit = cmt
-
 	fmt.Println("Serenity:")
 	fmt.Printf("  Version:                      %s\n", version.Version)
 	fmt.Printf("  Commit:            		%s\n", version.Commit)

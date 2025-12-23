@@ -107,19 +107,15 @@ type ImportRulesGroup struct {
 }
 
 type BestPracticesRulesGroup struct {
-	Use                    *bool           `json:"use,omitempty"`
-	NoDeferInLoop          *LinterBaseRule `json:"noDeferInLoop,omitempty"`
-	UseContextInFirstParam *LinterBaseRule `json:"useContextInFirstParam,omitempty"`
-	NoBareReturns          *LinterBaseRule `json:"noBareReturns,omitempty"`
-	NoMagicNumbers         *LinterBaseRule `json:"noMagicNumbers,omitempty"`
-	UseSliceCapacity       *LinterBaseRule `json:"useSliceCapacity,omitempty"`
-	MaxParams              *MaxParams      `json:"maxParams,omitempty"`
-	AvoidEmptyStructs      *LinterBaseRule `json:"avoidEmptyStructs,omitempty"`
-	AlwaysPreferConst      *LinterBaseRule `json:"alwaysPreferConst,omitempty"`
-}
-
-type MaxParams struct {
-	Quantity *int8 `json:"quantity,omitempty"`
+	Use                    *bool                `json:"use,omitempty"`
+	NoDeferInLoop          *LinterBaseRule      `json:"noDeferInLoop,omitempty"`
+	UseContextInFirstParam *LinterBaseRule      `json:"useContextInFirstParam,omitempty"`
+	NoBareReturns          *LinterBaseRule      `json:"noBareReturns,omitempty"`
+	NoMagicNumbers         *LinterBaseRule      `json:"noMagicNumbers,omitempty"`
+	UseSliceCapacity       *LinterBaseRule      `json:"useSliceCapacity,omitempty"`
+	MaxParams              *LinterIssuesOptions `json:"maxParams,omitempty"` // NOTE: aqui ficou MaxParams.Max, talvez melhor ser Quantity?
+	AvoidEmptyStructs      *LinterBaseRule      `json:"avoidEmptyStructs,omitempty"`
+	AlwaysPreferConst      *LinterBaseRule      `json:"alwaysPreferConst,omitempty"`
 }
 
 type CorrectnessRulesGroup struct {

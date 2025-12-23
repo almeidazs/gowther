@@ -15,8 +15,6 @@ import (
 	"sync/atomic"
 
 	"github.com/serenitysz/serenity/internal/rules"
-	"github.com/serenitysz/serenity/internal/rules/bestpractices"
-	"github.com/serenitysz/serenity/internal/rules/complexity"
 	"github.com/serenitysz/serenity/internal/rules/imports"
 )
 
@@ -43,12 +41,6 @@ const (
 	initialFileIssueCap = 0
 	finalFileIssueCap   = 32
 )
-
-var nodeRules = []func(*rules.Runner){
-	bestpractices.CheckContextFirstParamNode,
-	bestpractices.CheckMaxParamsNode,
-	complexity.CheckMaxFuncLinesNode,
-}
 
 func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 	src, err := os.ReadFile(path)
