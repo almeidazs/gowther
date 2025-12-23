@@ -2,8 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
 
 	"github.com/serenitysz/serenity/internal/rules"
 )
@@ -42,22 +40,4 @@ func FormatLog(issue rules.Issue, msg string) {
 		label,
 		colorReset,
 	)
-}
-
-func GetActualCommit() (string, error) {
-	cmd := exec.Command("git", "log", "-1", "--pretty-format:%H")
-
-	out, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("error to get hash from last commit: %w", err)
-	}
-
-	hash := strings.TrimSpace(string(out))
-	if len(hash) < 8 {
-		return "", fmt.Errorf("invalid commit hash")
-	}
-
-	log := hash[:8]
-
-	return log, nil
 }

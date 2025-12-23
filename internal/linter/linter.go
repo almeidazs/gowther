@@ -154,9 +154,9 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 		go func() {
 			defer wg.Done()
 
-			fset := token.NewFileSet()
-
 			for {
+				fset := token.NewFileSet()
+
 				select {
 				case <-done:
 					return
