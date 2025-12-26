@@ -1,30 +1,32 @@
 package linter
 
 import (
+	"reflect"
+
 	"github.com/serenitysz/serenity/internal/rules"
 	"github.com/serenitysz/serenity/internal/rules/bestpractices"
-	"github.com/serenitysz/serenity/internal/rules/complexity"
 )
 
-func GetActiveNodeRules(cfg *rules.LinterOptions) []func(*rules.Runner) {
-	activeRules := make([]func(*rules.Runner), 0, 10)
-	r := cfg.Linter.Rules
+func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
+	activeRules := make(map[reflect.Type][]rules.Rule)
+	const initialCap = 8
 
-	if bp := r.BestPractices; bp != nil && (bp.Use == nil || *bp.Use) {
-		if bp.MaxParams != nil {
-			activeRules = append(activeRules, bestpractices.CheckMaxParamsNode)
-		}
-		if bp.UseContextInFirstParam != nil {
-			activeRules = append(activeRules, bestpractices.CheckContextFirstParamNode)
+	register := func(r rules.Rule) {
+		for _, target := range r.Targets() {
+			t := rules.GetNodeType(target)
+			if activeRules[t] == nil {
+				activeRules[t] = make([]rules.Rule, 0, initialCap)
+			}
+			activeRules[t] = append(activeRules[t], r)
 		}
 	}
 
-	if cp := r.Complexity; cp != nil && (cp.Use == nil || *cp.Use) {
-		if cp.MaxFuncLines != nil {
-			activeRules = append(activeRules, complexity.CheckMaxFuncLinesNode)
+	r := cfg.Linter.Rules
+	if bp := r.BestPractices; bp != nil && (bp.Use == nil || *bp.Use) {
+		if bp.MaxParams != nil {
+			register(&bestpractices.MaxParamsRule{})
 		}
 	}
 
 	return activeRules
 }
-

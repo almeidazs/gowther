@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ const (
 	finalFileIssueCap   = 32
 )
 
-func (l *Linter) processSingleFile(path string, r []func(*rules.Runner)) ([]rules.Issue, error) {
+func (l *Linter) processSingleFile(path string, r map[reflect.Type][]rules.Rule) ([]rules.Issue, error) {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func (l *Linter) processSingleFile(path string, r []func(*rules.Runner)) ([]rule
 type analysisParams struct {
 	path       string
 	src        []byte
-	rules      []func(*rules.Runner)
+	rules      map[reflect.Type][]rules.Rule
 	fset       *token.FileSet
 	shouldStop func(int) bool
 }
@@ -87,18 +88,24 @@ func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
 		Autofix: l.Write || rules.CanAutoFix(l.Config),
 		Unsafe:  l.Unsafe,
 		Issues:  &issues,
+		ShouldStop: func() bool {
+			return params.shouldStop != nil && params.shouldStop(len(issues))
+		},
 	}
 
 	imports.CheckNoDotImports(&runner)
 
 	ast.Inspect(f, func(n ast.Node) bool {
-		if params.shouldStop != nil && params.shouldStop(len(issues)) {
-			return false
+		if n == nil {
+			return true
 		}
-		runner.Node = n
 
-		for _, rule := range params.rules {
-			rule(&runner)
+		runner.Node = n
+		nodeType := reflect.TypeOf(n)
+		if specificRules, found := params.rules[nodeType]; found {
+			for _, rule := range specificRules {
+				rule.Run(&runner, n)
+			}
 		}
 
 		return true
@@ -122,7 +129,7 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	if err != nil {
 		return nil, err
 	}
-	activeRules := GetActiveNodeRules(l.Config)
+	activeRules := GetActiveRulesMap(l.Config)
 
 	if !info.IsDir() {
 		if l.MaxFileSize > 0 && info.Size() > l.MaxFileSize {
@@ -166,9 +173,10 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 					}
 
 					localIssues, err := l.analyze(analysisParams{
-						path: path,
-						src:  src,
-						fset: fset,
+						path:  path,
+						src:   src,
+						fset:  fset,
+						rules: activeRules,
 						shouldStop: func(currentLocalCount int) bool {
 							return l.MaxIssues > 0 && int(atomic.LoadInt64(&total)) >= l.MaxIssues
 						},
