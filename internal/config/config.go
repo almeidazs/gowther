@@ -59,6 +59,9 @@ func ApplyRecommended(cfg *rules.LinterOptions) {
 		u := true
 		rulesGroup.BestPractices.MaxParams = &rules.LinterIssuesOptions{Max: &q, Use: &u}
 	}
+	if rulesGroup.BestPractices.AvoidEmptyStructs == nil {
+		rulesGroup.BestPractices.AvoidEmptyStructs = &rules.LinterBaseRule{Severity: "warn"}
+	}
 
 	if rulesGroup.Complexity == nil {
 		rulesGroup.Complexity = &rules.ComplexityRulesGroup{}
