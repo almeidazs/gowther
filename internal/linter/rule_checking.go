@@ -45,6 +45,10 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if bp.NoMagicNumbers != nil {
 			register(&bestpractices.NoMagicNumbersRule{})
 		}
+
+		if bp.AlwaysPreferConst != nil {
+			register(&bestpractices.AlwaysPreferConstRule{})
+		}
 	}
 
 	if cp := r.Complexity; cp != nil && (cp.Use == nil || *cp.Use) {

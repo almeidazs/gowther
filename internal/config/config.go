@@ -67,6 +67,10 @@ func ApplyRecommended(cfg *rules.LinterOptions) {
 		rulesGroup.BestPractices.NoMagicNumbers = &rules.LinterBaseRule{Severity: "warn"}
 	}
 
+	if rulesGroup.BestPractices.AlwaysPreferConst == nil {
+		rulesGroup.BestPractices.AlwaysPreferConst = &rules.LinterBaseRule{Severity: "warn"}
+	}
+
 	if rulesGroup.Complexity == nil {
 		rulesGroup.Complexity = &rules.ComplexityRulesGroup{}
 	}

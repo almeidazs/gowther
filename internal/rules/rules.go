@@ -3,18 +3,20 @@ package rules
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 )
 
 type Runner struct {
-	File       *ast.File
-	Node       ast.Node
-	Fset       *token.FileSet
-	Cfg        *LinterOptions
-	Issues     *[]Issue
-	Autofix    bool
-	Unsafe     bool
-	Modified   bool
-	ShouldStop func() bool
+	File           *ast.File
+	Fset           *token.FileSet
+	Cfg            *LinterOptions
+	Issues         *[]Issue
+	Autofix        bool
+	Unsafe         bool
+	Modified       bool
+	ShouldStop     func() bool
+	MutatedObjects map[types.Object]bool
+	TypesInfo      *types.Info
 }
 
 type LinterOptions struct {

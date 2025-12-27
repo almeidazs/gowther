@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -69,27 +70,70 @@ type analysisParams struct {
 }
 
 func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
-	f, err := parser.ParseFile(params.fset, params.path, params.src, parser.SkipObjectResolution)
+	f, err := parser.ParseFile(params.fset, params.path, params.src, 0)
 	if err != nil {
 		return nil, err
 	}
 
+	conf := types.Config{
+		Importer: nil,
+		Error:    func(err error) {},
+	}
+
+	info := &types.Info{
+		Defs: make(map[*ast.Ident]types.Object),
+		Uses: make(map[*ast.Ident]types.Object),
+	}
+
+	conf.Check(params.path, params.fset, []*ast.File{f}, info)
+
+	mutatedObjects := make(map[types.Object]bool)
 	if l.Config.Linter.Use != nil && !*l.Config.Linter.Use {
 		return nil, nil
 	}
 
+	ast.Inspect(f, func(n ast.Node) bool {
+		switch t := n.(type) {
+		case *ast.AssignStmt:
+			for _, lhs := range t.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok {
+					if obj := info.Uses[id]; obj != nil {
+						mutatedObjects[obj] = true
+					}
+				}
+			}
+		case *ast.IncDecStmt:
+			if id, ok := t.X.(*ast.Ident); ok {
+				if obj := info.Uses[id]; obj != nil {
+					mutatedObjects[obj] = true
+				}
+			}
+		case *ast.UnaryExpr:
+			if t.Op == token.AND {
+				if id, ok := t.X.(*ast.Ident); ok {
+					if obj := info.Uses[id]; obj != nil {
+						mutatedObjects[obj] = true
+					}
+				}
+			}
+		}
+		return true
+	})
+
 	issues := make([]rules.Issue, initialFileIssueCap, finalFileIssueCap)
 
 	runner := rules.Runner{
-		File:    f,
-		Fset:    params.fset,
-		Cfg:     l.Config,
-		Autofix: l.Write || rules.CanAutoFix(l.Config),
-		Unsafe:  l.Unsafe,
-		Issues:  &issues,
+		File:           f,
+		Fset:           params.fset,
+		Cfg:            l.Config,
+		Autofix:        l.Write || rules.CanAutoFix(l.Config),
+		Unsafe:         l.Unsafe,
+		Issues:         &issues,
+		MutatedObjects: mutatedObjects,
 		ShouldStop: func() bool {
 			return params.shouldStop != nil && params.shouldStop(len(issues))
 		},
+		TypesInfo: info,
 	}
 
 	ast.Inspect(f, func(n ast.Node) bool {
@@ -97,7 +141,6 @@ func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
 			return true
 		}
 
-		runner.Node = n
 		nodeType := reflect.TypeOf(n)
 		if specificRules, found := params.rules[nodeType]; found {
 			for _, rule := range specificRules {
