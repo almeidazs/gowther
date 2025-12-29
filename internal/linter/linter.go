@@ -7,15 +7,16 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/serenitysz/serenity/internal/rules"
-	"github.com/serenitysz/serenity/internal/rules/imports"
 )
 
 type Linter struct {
@@ -42,7 +43,7 @@ const (
 	finalFileIssueCap   = 32
 )
 
-func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
+func (l *Linter) processSingleFile(path string, r map[reflect.Type][]rules.Rule) ([]rules.Issue, error) {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -50,9 +51,10 @@ func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 
 	fset := token.NewFileSet()
 	return l.analyze(analysisParams{
-		path: path,
-		src:  src,
-		fset: fset,
+		path:  path,
+		src:   src,
+		fset:  fset,
+		rules: r,
 		shouldStop: func(currentLocalCount int) bool {
 			return l.MaxIssues > 0 && currentLocalCount >= l.MaxIssues
 		},
@@ -62,41 +64,88 @@ func (l *Linter) processSingleFile(path string) ([]rules.Issue, error) {
 type analysisParams struct {
 	path       string
 	src        []byte
+	rules      map[reflect.Type][]rules.Rule
 	fset       *token.FileSet
 	shouldStop func(int) bool
 }
 
 func (l *Linter) analyze(params analysisParams) ([]rules.Issue, error) {
-	f, err := parser.ParseFile(params.fset, params.path, params.src, parser.SkipObjectResolution)
+	f, err := parser.ParseFile(params.fset, params.path, params.src, 0)
 	if err != nil {
 		return nil, err
 	}
 
+	conf := types.Config{
+		Importer: nil,
+		Error:    func(err error) {},
+	}
+
+	info := &types.Info{
+		Defs: make(map[*ast.Ident]types.Object),
+		Uses: make(map[*ast.Ident]types.Object),
+	}
+
+	conf.Check(params.path, params.fset, []*ast.File{f}, info)
+
+	mutatedObjects := make(map[types.Object]bool)
 	if l.Config.Linter.Use != nil && !*l.Config.Linter.Use {
 		return nil, nil
 	}
 
+	ast.Inspect(f, func(n ast.Node) bool {
+		switch t := n.(type) {
+		case *ast.AssignStmt:
+			for _, lhs := range t.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok {
+					if obj := info.Uses[id]; obj != nil {
+						mutatedObjects[obj] = true
+					}
+				}
+			}
+		case *ast.IncDecStmt:
+			if id, ok := t.X.(*ast.Ident); ok {
+				if obj := info.Uses[id]; obj != nil {
+					mutatedObjects[obj] = true
+				}
+			}
+		case *ast.UnaryExpr:
+			if t.Op == token.AND {
+				if id, ok := t.X.(*ast.Ident); ok {
+					if obj := info.Uses[id]; obj != nil {
+						mutatedObjects[obj] = true
+					}
+				}
+			}
+		}
+		return true
+	})
+
 	issues := make([]rules.Issue, initialFileIssueCap, finalFileIssueCap)
 
 	runner := rules.Runner{
-		File:    f,
-		Fset:    params.fset,
-		Cfg:     l.Config,
-		Autofix: l.Write || rules.CanAutoFix(l.Config),
-		Unsafe:  l.Unsafe,
-		Issues:  &issues,
+		File:           f,
+		Fset:           params.fset,
+		Cfg:            l.Config,
+		Autofix:        l.Write || rules.CanAutoFix(l.Config),
+		Unsafe:         l.Unsafe,
+		Issues:         &issues,
+		MutatedObjects: mutatedObjects,
+		ShouldStop: func() bool {
+			return params.shouldStop != nil && params.shouldStop(len(issues))
+		},
+		TypesInfo: info,
 	}
 
-	imports.CheckNoDotImports(&runner)
-
 	ast.Inspect(f, func(n ast.Node) bool {
-		if params.shouldStop != nil && params.shouldStop(len(issues)) {
-			return false
+		if n == nil {
+			return true
 		}
-		runner.Node = n
 
-		for _, rule := range nodeRules {
-			rule(&runner)
+		nodeType := reflect.TypeOf(n)
+		if specificRules, found := params.rules[nodeType]; found {
+			for _, rule := range specificRules {
+				rule.Run(&runner, n)
+			}
 		}
 
 		return true
@@ -120,13 +169,14 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 	if err != nil {
 		return nil, err
 	}
+	activeRules := GetActiveRulesMap(l.Config)
 
 	if !info.IsDir() {
 		if l.MaxFileSize > 0 && info.Size() > l.MaxFileSize {
 			return nil, nil
 		}
 
-		return l.processSingleFile(root)
+		return l.processSingleFile(root, activeRules)
 	}
 
 	workers := runtime.GOMAXPROCS(0)
@@ -163,9 +213,10 @@ func (l *Linter) ProcessPath(root string) ([]rules.Issue, error) {
 					}
 
 					localIssues, err := l.analyze(analysisParams{
-						path: path,
-						src:  src,
-						fset: fset,
+						path:  path,
+						src:   src,
+						fset:  fset,
+						rules: activeRules,
 						shouldStop: func(currentLocalCount int) bool {
 							return l.MaxIssues > 0 && int(atomic.LoadInt64(&total)) >= l.MaxIssues
 						},
