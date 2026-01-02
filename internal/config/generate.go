@@ -1,36 +1,174 @@
 package config
 
-import "github.com/serenitysz/serenity/internal/rules"
+import (
+	"github.com/serenitysz/serenity/internal/rules"
+	"github.com/serenitysz/serenity/internal/version"
+)
 
-func GenDefaultConfig() *rules.LinterOptions {
+func GenDefaultConfig(autofix *bool) *rules.LinterOptions {
 	var OneMBInBytes int64 = 1 * 1024 * 1024
 
 	config := rules.LinterOptions{
 		File: &rules.GoFileOptions{
-			MaxFileSize: &OneMBInBytes, Exclude: &[]string{"**/vendor/**", "**/*.test.go"},
+			MaxFileSize: &OneMBInBytes,
+			Exclude:     &[]string{"**/vendor/**", "**/*.test.go"},
 		},
-		Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/1.0.0.json",
+		Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/" + version.Version + ".json",
 		Linter: rules.LinterRules{
-			Use: Bool(true), Rules: &rules.LinterRulesGroup{
-				UseRecommended: Bool(true),
+			Use: Ptr(true), Rules: &rules.LinterRulesGroup{
+				UseRecommended: Ptr(true),
 			},
 			Issues: &rules.LinterIssuesOptions{
-				Max: Int16(20),
-				Use: Bool(true),
+				Use: Ptr(true),
+				Max: Ptr(int16(20)),
 			},
 		},
 		Performance: &rules.PerformanceOptions{
-			Use:     Bool(true),
-			Caching: Bool(true),
+			Use:     Ptr(true),
+			Caching: Ptr(true),
 		},
 		Assistance: &rules.AssistanceOptions{
-			Use:     Bool(true),
-			AutoFix: Bool(false),
+			AutoFix: autofix,
+			Use:     Ptr(true),
 		},
 	}
 
 	return &config
 }
 
-func Bool(v bool) *bool    { return &v }
-func Int16(v int16) *int16 { return &v }
+func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
+	var (
+		oneMB           int64 = 1 * 1024 * 1024
+		maxParams             = int16(4)
+		maxFuncLines          = 40
+		maxNesting            = 3
+		maxCyclomatic         = 8
+		receiverMaxSize       = 1
+	)
+
+	return &rules.LinterOptions{
+		Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/" + version.Version + ".json",
+		File: &rules.GoFileOptions{
+			MaxFileSize: &oneMB,
+			Exclude:     &[]string{"**/vendor/**", "**/*.test.go"},
+		},
+		Linter: rules.LinterRules{
+			Use: Ptr(true),
+			Issues: &rules.LinterIssuesOptions{
+				Use: Ptr(true),
+				Max: Ptr(int16(10)),
+			},
+			Rules: &rules.LinterRulesGroup{
+				UseRecommended: Ptr(false),
+				Errors: &rules.ErrorHandlingRulesGroup{
+					Use: Ptr(true),
+					NoErrorShadowing: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					ErrorStringFormat: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					ErrorNotWrapped: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+				},
+				Imports: &rules.ImportRulesGroup{
+					Use: Ptr(true),
+					NoDotImports: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					DisallowedPackages: &rules.DisallowedPackagesRule{
+						Severity: "error",
+						Packages: []string{
+							"log",
+						},
+					},
+				},
+				BestPractices: &rules.BestPracticesRulesGroup{
+					Use: Ptr(true),
+					NoDeferInLoop: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					UseContextInFirstParam: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					NoBareReturns: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					NoMagicNumbers: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					UseSliceCapacity: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					AvoidEmptyStructs: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					AlwaysPreferConst: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					MaxParams: &rules.LinterIssuesOptions{
+						Use: Ptr(true),
+						Max: &maxParams,
+					},
+				},
+				Correctness: &rules.CorrectnessRulesGroup{
+					Use: Ptr(true),
+
+					UnusedReceiver: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					UnusedParams: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+					EmptyBlock: &rules.LinterBaseRule{
+						Severity: "error",
+					},
+				},
+				Complexity: &rules.ComplexityRulesGroup{
+					Use: Ptr(true),
+					MaxFuncLines: &rules.AnyMaxValueBasedRule{
+						Severity: "error",
+						Max:      &maxFuncLines,
+					},
+					MaxNestingDepth: &rules.AnyMaxValueBasedRule{
+						Severity: "error",
+						Max:      &maxNesting,
+					},
+					CyclomaticComplexity: &rules.AnyMaxValueBasedRule{
+						Severity: "error",
+						Max:      &maxCyclomatic,
+					},
+				},
+				Naming: &rules.NamingRulesGroup{
+					Use: Ptr(true),
+					ReceiverNames: &rules.ReceiverNamesRule{
+						Severity: "error",
+						MaxSize:  &receiverMaxSize,
+					},
+					ExportedIdentifiers: &rules.AnyPatternBasedRule{
+						Severity: "error",
+						Pattern:  Ptr("^[A-Z][A-Za-z0-9]*$"),
+					},
+					ImportedIdentifiers: &rules.AnyPatternBasedRule{
+						Severity: "error",
+						Pattern:  Ptr("^[a-z][a-z0-9]*$"),
+					},
+				},
+			},
+		},
+		Performance: &rules.PerformanceOptions{
+			Threads: nil,
+			Use:     Ptr(true),
+			Caching: Ptr(true),
+		},
+		Assistance: &rules.AssistanceOptions{
+			AutoFix: autofix,
+			Use:     Ptr(true),
+		},
+	}
+}
+
+func Ptr[T any](value T) *T {
+	return &value
+}

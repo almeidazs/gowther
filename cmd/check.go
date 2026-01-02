@@ -44,7 +44,7 @@ func Check(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	linterCfg = config.GenDefaultConfig()
+	linterCfg = config.GenDefaultConfig(new(bool))
 
 	if exists {
 		cfg, err := config.ReadConfig(path)

@@ -75,18 +75,15 @@ type LinterIssuesOptions struct {
 }
 
 type LinterBaseRule struct {
-	Use      *bool  `json:"use,omitempty"`
 	Severity string `json:"severity"`
 }
 
 type AnyMaxValueBasedRule struct {
-	Use      *bool  `json:"use,omitempty"`
 	Severity string `json:"severity"`
 	Max      *int   `json:"max,omitempty"`
 }
 
 type AnyPatternBasedRule struct {
-	Use      bool    `json:"use.omitempty"`
 	Severity string  `json:"severity"`
 	Pattern  *string `json:"pattern,omitempty"`
 }

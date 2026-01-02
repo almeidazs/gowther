@@ -23,7 +23,7 @@ func (u *UseSliceCapacityRule) Run(runner *rules.Runner, node ast.Node) {
 
 	bp := runner.Cfg.Linter.Rules.BestPractices
 
-	if bp == nil || (bp.Use != nil && !*bp.Use) || bp.UseSliceCapacity == nil || (bp.UseSliceCapacity.Use != nil && !*bp.UseSliceCapacity.Use) {
+	if bp == nil || (bp.Use != nil && !*bp.Use) || bp.UseSliceCapacity == nil {
 		return
 	}
 

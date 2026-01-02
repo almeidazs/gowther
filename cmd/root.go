@@ -8,7 +8,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	SilenceUsage:  true,
-	SilenceErrors: true,
+	SilenceErrors: false,
 	Use:           "serenity <command> [flags]",
 	Short:         "Serenity is an aggressive, no-noise and ultra fast Go linter",
 }
