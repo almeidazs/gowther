@@ -15,12 +15,13 @@ func GenDefaultConfig(autofix *bool) *rules.LinterOptions {
 		},
 		Schema: "https://raw.githubusercontent.com/serenitysz/schema/main/versions/" + version.Version + ".json",
 		Linter: rules.LinterRules{
-			Use: Ptr(true), Rules: &rules.LinterRulesGroup{
+			Use: true,
+			Rules: rules.LinterRulesGroup{
 				UseRecommended: Ptr(true),
 			},
 			Issues: &rules.LinterIssuesOptions{
-				Use: Ptr(true),
-				Max: Ptr(int16(20)),
+				Use: true,
+				Max: uint16(20),
 			},
 		},
 		Performance: &rules.PerformanceOptions{
@@ -39,7 +40,7 @@ func GenDefaultConfig(autofix *bool) *rules.LinterOptions {
 func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 	var (
 		oneMB           int64 = 1 * 1024 * 1024
-		maxParams             = int16(4)
+		maxParams             = uint16(4)
 		maxFuncLines          = 40
 		maxNesting            = 3
 		maxCyclomatic         = 8
@@ -53,15 +54,15 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 			Exclude:     &[]string{"**/vendor/**", "**/*.test.go"},
 		},
 		Linter: rules.LinterRules{
-			Use: Ptr(true),
+			Use: true,
 			Issues: &rules.LinterIssuesOptions{
-				Use: Ptr(true),
-				Max: Ptr(int16(10)),
+				Use: true,
+				Max: uint16(10),
 			},
-			Rules: &rules.LinterRulesGroup{
+			Rules: rules.LinterRulesGroup{
 				UseRecommended: Ptr(false),
 				Errors: &rules.ErrorHandlingRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 					NoErrorShadowing: &rules.LinterBaseRule{
 						Severity: "error",
 					},
@@ -73,7 +74,7 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 					},
 				},
 				Imports: &rules.ImportRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 					NoDotImports: &rules.LinterBaseRule{
 						Severity: "error",
 					},
@@ -85,7 +86,7 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 					},
 				},
 				BestPractices: &rules.BestPracticesRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 					NoDeferInLoop: &rules.LinterBaseRule{
 						Severity: "error",
 					},
@@ -108,12 +109,12 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 						Severity: "error",
 					},
 					MaxParams: &rules.LinterIssuesOptions{
-						Use: Ptr(true),
-						Max: &maxParams,
+						Use: true,
+						Max: maxParams,
 					},
 				},
 				Correctness: &rules.CorrectnessRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 
 					UnusedReceiver: &rules.LinterBaseRule{
 						Severity: "error",
@@ -126,7 +127,7 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 					},
 				},
 				Complexity: &rules.ComplexityRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 					MaxFuncLines: &rules.AnyMaxValueBasedRule{
 						Severity: "error",
 						Max:      &maxFuncLines,
@@ -141,7 +142,7 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 					},
 				},
 				Naming: &rules.NamingRulesGroup{
-					Use: Ptr(true),
+					Use: true,
 					ReceiverNames: &rules.ReceiverNamesRule{
 						Severity: "error",
 						MaxSize:  &receiverMaxSize,

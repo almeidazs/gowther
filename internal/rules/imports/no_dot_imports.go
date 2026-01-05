@@ -23,7 +23,7 @@ func (r *NoDotImportsRule) Run(runner *rules.Runner, node ast.Node) {
 
 	imports := runner.Cfg.Linter.Rules.Imports
 
-	if imports == nil || (imports.Use != nil && !*imports.Use) || imports.NoDotImports == nil {
+	if imports == nil || !imports.Use || imports.NoDotImports == nil {
 		return
 	}
 

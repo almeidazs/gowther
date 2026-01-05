@@ -23,7 +23,7 @@ func (c *CheckMaxFuncLinesRule) Run(runner *rules.Runner, node ast.Node) {
 
 	complexity := runner.Cfg.Linter.Rules.Complexity
 
-	if complexity == nil || complexity.Use != nil && !*complexity.Use {
+	if complexity == nil || !complexity.Use {
 		return
 	}
 

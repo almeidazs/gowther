@@ -25,7 +25,7 @@ func (r *DisallowedPackagesRule) Run(runner *rules.Runner, node ast.Node) {
 
 	imports := runner.Cfg.Linter.Rules.Imports
 
-	if imports == nil || (imports.Use != nil && !*imports.Use) || imports.DisallowedPackages == nil {
+	if imports == nil || !imports.Use || imports.DisallowedPackages == nil {
 		return
 	}
 

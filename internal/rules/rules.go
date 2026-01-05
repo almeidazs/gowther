@@ -18,7 +18,7 @@ type Runner struct {
 	MutatedObjects map[types.Object]bool
 	TypesInfo      *types.Info
 	// TODO: Change to uint16 (unsigned)
-	IssuesCount *int16
+	IssuesCount *uint16
 }
 
 type LinterOptions struct {
@@ -64,14 +64,14 @@ type AssistanceOptions struct {
 }
 
 type LinterRules struct {
-	Use    *bool                `json:"use,omitempty"`
-	Rules  *LinterRulesGroup    `json:"rules,omitempty"`
+	Use    bool                 `json:"use,omitempty"`
+	Rules  LinterRulesGroup     `json:"rules,omitempty"`
 	Issues *LinterIssuesOptions `json:"issues,omitempty"`
 }
 
 type LinterIssuesOptions struct {
-	Use *bool  `json:"use,omitempty"`
-	Max *int16 `json:"max,omitempty"`
+	Use bool   `json:"use,omitempty"`
+	Max uint16 `json:"max,omitempty"`
 }
 
 type LinterBaseRule struct {
@@ -99,20 +99,25 @@ type LinterRulesGroup struct {
 }
 
 type ErrorHandlingRulesGroup struct {
-	Use               *bool           `json:"use,omitempty"`
+	Use               bool            `json:"use"`
 	NoErrorShadowing  *LinterBaseRule `json:"noErrorShadowing,omitempty"`
 	ErrorStringFormat *LinterBaseRule `json:"errorStringFormat,omitempty"`
 	ErrorNotWrapped   *LinterBaseRule `json:"errorNotWrapped,omitempty"`
 }
 
 type ImportRulesGroup struct {
-	Use                *bool                   `json:",omitempty"`
-	NoDotImports       *LinterBaseRule         `json:"noDotImports,omitempty"`
-	DisallowedPackages *DisallowedPackagesRule `json:"disallowedPackages,omitempty"`
+	Use                  bool                    `json:"use"`
+	NoDotImports         *LinterBaseRule         `json:"noDotImports,omitempty"`
+	DisallowedPackages   *DisallowedPackagesRule `json:"disallowedPackages,omitempty"`
+	RedundantImportAlias *LinterBaseRule         `json:"redundantImportAlias,omitempty"`
 }
 
 type BestPracticesRulesGroup struct {
-	Use                    *bool                `json:"use,omitempty"`
+	Use                    bool                 `json:"use"`
+	SimplifyBooleanReturn  *LinterBaseRule      `json:"simplifyBooleanReturn,omitempty"`
+	GetMustReturnValue     *LinterBaseRule      `json:"getMustReturnValue,omitempty"`
+	PreferEarlyReturn      *LinterBaseRule      `json:"preferEarlyReturn,omitempty"`
+	RedundantErrorCheck    *LinterBaseRule      `json:"redundantErrorCheck,omitempty"`
 	NoDeferInLoop          *LinterBaseRule      `json:"noDeferInLoop,omitempty"`
 	UseContextInFirstParam *LinterBaseRule      `json:"useContextInFirstParam,omitempty"`
 	NoBareReturns          *LinterBaseRule      `json:"noBareReturns,omitempty"`
@@ -124,27 +129,65 @@ type BestPracticesRulesGroup struct {
 }
 
 type CorrectnessRulesGroup struct {
-	Use            *bool           `json:"use,omitempty"`
-	UnusedReceiver *LinterBaseRule `json:"unusedReceiver,omitempty"`
-	UnusedParams   *LinterBaseRule `json:"ununsedParams,omitempty"`
-	EmptyBlock     *LinterBaseRule `json:"emptyBlock,omitempty"`
+	Use                    bool                  `json:"use,omitempty"`
+	UnusedReceiver         *LinterBaseRule       `json:"unusedReceiver,omitempty"`
+	UnusedParams           *LinterBaseRule       `json:"ununsedParams,omitempty"`
+	EmptyBlock             *LinterBaseRule       `json:"emptyBlock,omitempty"`
+	BoolLiteralExpressions *LinterBaseRule       `json:"boolLiteralExpressions,omitempty"`
+	AmbiguousReturns       *AmbiguousReturnsRule `json:"ambiguousReturns,omitempty"`
 }
 
 type ComplexityRulesGroup struct {
-	Use                  *bool                 `json:"use,omitempty"`
+	Use                  bool                  `json:"use,omitempty"`
 	MaxFuncLines         *AnyMaxValueBasedRule `json:"maxFuncLines,omitempty"`
 	MaxNestingDepth      *AnyMaxValueBasedRule `json:"maxNestingDepth,omitempty"`
 	CyclomaticComplexity *AnyMaxValueBasedRule `json:"cyclomaticComplexity,omitempty"`
 }
 
 type NamingRulesGroup struct {
-	Use                 *bool                `json:"use,omitempty"`
+	Use                 bool                 `json:"use,omitempty"`
 	ReceiverNames       *ReceiverNamesRule   `json:"receiverNames,omitempty"`
 	ExportedIdentifiers *AnyPatternBasedRule `json:"exportedIdentifiers,omitempty"`
 	ImportedIdentifiers *AnyPatternBasedRule `json:"importedIdentifiers,omitempty"`
+	BannedChars         *BannedCharsRule     `json:"bannedChars,omitempty"`
+}
+
+type StyleRulesGroup struct {
+	Use             bool                  `json:"use,omitempty"`
+	PreferIncDec    *LinterBaseRule       `json:"preferIncDec,omitempty"`
+	MaxLineLength   *AnyMaxValueBasedRule `json:"maxLineLength,omitempty"`
+	PackageComments *PackageCommentsRule  `json:"packageComments,omitempty"`
+	CommentSpacing  *CommentSpacingRule   `json:"commentSpacing,omitempty"`
+	FileHeader      *FileHeaderRule       `json:"fileHeader,omitempty"`
 }
 
 // SINGLE RULES STRUCTS
+
+type FileHeaderRule struct {
+	Severity     string `json:"severity,omitempty"`
+	Header       string `json:"header"`
+	AllowShebang *bool  `json:"allowShebang,omitempty"`
+}
+
+type CommentSpacingRule struct {
+	Severity   string    `json:"severity"`
+	Exceptions *[]string `json:"exceptions,omitempty"`
+}
+
+type PackageCommentsRule struct {
+	Severity         string `json:"severity"`
+	RequireTopOfFile *bool  `json:"requireTopOfFile,omitempty"`
+}
+
+type BannedCharsRule struct {
+	Severity string   `json:"severity"`
+	Chars    []string `json:"chars"`
+}
+
+type AmbiguousReturnsRule struct {
+	Severity           string `json:"severity"`
+	MaxUnnamedSameType *uint8 `json:"maxUnnamedSameType,omitempty"`
+}
 
 type DisallowedPackagesRule struct {
 	Severity string   `json:"severity"`

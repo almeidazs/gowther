@@ -26,7 +26,7 @@ func (r *ImportedIdentifiersRule) Run(runner *rules.Runner, node ast.Node) {
 
 	naming := runner.Cfg.Linter.Rules.Naming
 
-	if naming == nil || (naming.Use != nil && !*naming.Use) || naming.ImportedIdentifiers == nil {
+	if naming == nil || !naming.Use || naming.ImportedIdentifiers == nil {
 		return
 	}
 

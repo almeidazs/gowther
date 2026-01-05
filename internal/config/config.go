@@ -24,7 +24,7 @@ func ReadConfig(path string) (*rules.LinterOptions, error) {
 }
 
 func ApplyRecommended(cfg *rules.LinterOptions) {
-	if cfg.Linter.Rules == nil || cfg.Linter.Rules.UseRecommended == nil || !*cfg.Linter.Rules.UseRecommended {
+	if cfg.Linter.Rules.UseRecommended == nil || !*cfg.Linter.Rules.UseRecommended {
 		return
 	}
 
@@ -55,9 +55,7 @@ func ApplyRecommended(cfg *rules.LinterOptions) {
 		rulesGroup.BestPractices.UseContextInFirstParam = &rules.LinterBaseRule{Severity: "warn"}
 	}
 	if rulesGroup.BestPractices.MaxParams == nil {
-		var q int16 = 5
-		u := true
-		rulesGroup.BestPractices.MaxParams = &rules.LinterIssuesOptions{Max: &q, Use: &u}
+		rulesGroup.BestPractices.MaxParams = &rules.LinterIssuesOptions{Max: 5, Use: true}
 	}
 	if rulesGroup.BestPractices.AvoidEmptyStructs == nil {
 		rulesGroup.BestPractices.AvoidEmptyStructs = &rules.LinterBaseRule{Severity: "warn"}

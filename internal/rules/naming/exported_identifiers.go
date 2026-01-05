@@ -31,7 +31,7 @@ func (r *ExportedIdentifiersRule) Run(runner *rules.Runner, node ast.Node) {
 
 	cfg := runner.Cfg.Linter.Rules.Naming
 
-	if cfg == nil || (cfg.Use != nil && !*cfg.Use) || cfg.ExportedIdentifiers == nil {
+	if cfg == nil || !cfg.Use || cfg.ExportedIdentifiers == nil {
 		return
 	}
 

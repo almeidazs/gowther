@@ -23,7 +23,7 @@ func (a *AlwaysPreferConstRule) Run(runner *rules.Runner, node ast.Node) {
 	}
 	bp := runner.Cfg.Linter.Rules.BestPractices
 
-	if bp == nil || (bp.Use != nil && !*bp.Use) || bp.AlwaysPreferConst == nil {
+	if bp == nil || !bp.Use || bp.AlwaysPreferConst == nil {
 		return
 	}
 

@@ -23,7 +23,7 @@ func (r *EmptyBlockRule) Run(runner *rules.Runner, node ast.Node) {
 
 	correctness := runner.Cfg.Linter.Rules.Correctness
 
-	if correctness == nil || (correctness.Use != nil && !*correctness.Use) || correctness.EmptyBlock == nil {
+	if correctness == nil || !correctness.Use || correctness.EmptyBlock == nil {
 		return
 	}
 

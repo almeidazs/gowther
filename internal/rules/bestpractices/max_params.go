@@ -23,7 +23,7 @@ func (r *MaxParamsRule) Run(runner *rules.Runner, node ast.Node) {
 
 	bp := runner.Cfg.Linter.Rules.BestPractices
 
-	if bp == nil || (bp.Use != nil && !*bp.Use) {
+	if bp == nil || !bp.Use {
 		return
 	}
 
@@ -33,13 +33,13 @@ func (r *MaxParamsRule) Run(runner *rules.Runner, node ast.Node) {
 		return
 	}
 
-	var limit uint8 = 5
+	var limit uint16 = 5
 
-	if bp.MaxParams != nil && bp.MaxParams.Max != nil {
-		limit = uint8(*bp.MaxParams.Max)
+	if bp.MaxParams != nil {
+		limit = bp.MaxParams.Max
 	}
 
-	var count uint8
+	var count uint16
 
 	for _, field := range fn.Type.Params.List {
 		if len(field.Names) == 0 {
@@ -48,7 +48,7 @@ func (r *MaxParamsRule) Run(runner *rules.Runner, node ast.Node) {
 			continue
 		}
 
-		count += uint8(len(field.Names))
+		count += uint16(len(field.Names))
 	}
 
 	if limit > 0 && count <= (limit) {

@@ -73,36 +73,34 @@ func (l *Linter) analyzePackage(params analysisParams) ([]rules.Issue, error) {
 
 	mutatedObjects := make(map[types.Object]bool)
 
-	if l.Config.Linter.Use == nil || *l.Config.Linter.Use {
-		for _, f := range params.pkgFiles {
-			ast.Inspect(f, func(n ast.Node) bool {
-				switch t := n.(type) {
-				case *ast.AssignStmt:
-					for _, lhs := range t.Lhs {
-						if id, ok := lhs.(*ast.Ident); ok {
-							if obj := info.Uses[id]; obj != nil {
-								mutatedObjects[obj] = true
-							}
+	for _, f := range params.pkgFiles {
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch t := n.(type) {
+			case *ast.AssignStmt:
+				for _, lhs := range t.Lhs {
+					if id, ok := lhs.(*ast.Ident); ok {
+						if obj := info.Uses[id]; obj != nil {
+							mutatedObjects[obj] = true
 						}
 					}
-				case *ast.IncDecStmt:
+				}
+			case *ast.IncDecStmt:
+				if id, ok := t.X.(*ast.Ident); ok {
+					if obj := info.Uses[id]; obj != nil {
+						mutatedObjects[obj] = true
+					}
+				}
+			case *ast.UnaryExpr:
+				if t.Op == token.AND {
 					if id, ok := t.X.(*ast.Ident); ok {
 						if obj := info.Uses[id]; obj != nil {
 							mutatedObjects[obj] = true
 						}
 					}
-				case *ast.UnaryExpr:
-					if t.Op == token.AND {
-						if id, ok := t.X.(*ast.Ident); ok {
-							if obj := info.Uses[id]; obj != nil {
-								mutatedObjects[obj] = true
-							}
-						}
-					}
 				}
-				return true
-			})
-		}
+			}
+			return true
+		})
 	}
 
 	estimatedIssues := len(params.pkgFiles) * 8
@@ -120,7 +118,7 @@ func (l *Linter) analyzePackage(params analysisParams) ([]rules.Issue, error) {
 			Autofix:        l.Write || rules.CanAutoFix(l.Config),
 			Unsafe:         l.Unsafe,
 			Issues:         &issues,
-			IssuesCount:    new(int16),
+			IssuesCount:    new(uint16),
 			MutatedObjects: mutatedObjects,
 			ShouldStop: func() bool {
 				return params.shouldStop != nil && params.shouldStop(len(allIssues)+len(issues))

@@ -27,7 +27,7 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 
 	r := cfg.Linter.Rules
 
-	if imp := r.Imports; imp != nil && (imp.Use == nil || *imp.Use) {
+	if imp := r.Imports; imp != nil && imp.Use {
 		if imp.NoDotImports != nil {
 			register(&imports.NoDotImportsRule{})
 		}
@@ -36,7 +36,7 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		}
 	}
 
-	if bp := r.BestPractices; bp != nil && (bp.Use == nil || *bp.Use) {
+	if bp := r.BestPractices; bp != nil && bp.Use {
 		if bp.MaxParams != nil {
 			register(&bestpractices.MaxParamsRule{})
 		}
@@ -67,19 +67,19 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		}
 	}
 
-	if cp := r.Complexity; cp != nil && (cp.Use == nil || *cp.Use) {
+	if cp := r.Complexity; cp != nil && cp.Use {
 		if cp.MaxFuncLines != nil {
 			register(&complexity.CheckMaxFuncLinesRule{})
 		}
 	}
 
-	if crr := r.Correctness; crr != nil && (crr.Use == nil || *crr.Use) {
+	if crr := r.Correctness; crr != nil && crr.Use {
 		if crr.EmptyBlock != nil {
 			register(&correctness.EmptyBlockRule{})
 		}
 	}
 
-	if n := r.Naming; n != nil && (n.Use == nil || *n.Use) {
+	if n := r.Naming; n != nil && n.Use {
 		if n.ReceiverNames != nil {
 			register(&naming.ReceiverNamesRule{})
 		}

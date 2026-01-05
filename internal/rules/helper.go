@@ -7,9 +7,9 @@ func CanAutoFix(cfg *LinterOptions) bool {
 }
 
 // TODO: Change to uint16 (unsigned)
-func GetMaxIssues(cfg *LinterOptions) int16 {
-	if cfg.Linter.Issues != nil && cfg.Linter.Issues.Max != nil {
-		return *cfg.Linter.Issues.Max
+func GetMaxIssues(cfg *LinterOptions) uint16 {
+	if cfg.Linter.Issues != nil {
+		return cfg.Linter.Issues.Max
 	}
 
 	return 0
