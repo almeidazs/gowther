@@ -17,14 +17,14 @@ type Runner struct {
 	ShouldStop     func() bool
 	MutatedObjects map[types.Object]bool
 	TypesInfo      *types.Info
-	// TODO: Change to uint16 (unsigned)
-	IssuesCount *uint16
+	IssuesCount    *uint16
 }
 
 type LinterOptions struct {
 	Linter      LinterRules         `json:"linter" yaml:"linter" toml:"linter"`
-	Schema      string              `json:"$schema" yaml:"$schema,omitempty" toml:"$schema,omitempty"`
 	File        *GoFileOptions      `json:"go,omitempty" yaml:"go,omitempty" toml:"go,omitempty"`
+	Git         *GitOptions         `json:"git,omitempty" yaml:"git,omitempty" toml:"git,omitempty"`
+	Schema      string              `json:"$schema" yaml:"$schema,omitempty" toml:"$schema,omitempty"`
 	Extends     *[]string           `json:"extends,omitempty" yaml:"extends,omitempty" toml:"extends,omitempty"`
 	Assistance  *AssistanceOptions  `json:"assistance,omitempty" yaml:"assistance,omitempty" toml:"assistance,omitempty"`
 	Performance *PerformanceOptions `json:"performance,omitempty" yaml:"performance,omitempty" toml:"performance,omitempty"`
@@ -46,6 +46,15 @@ const (
 	IssueExperimentalFlag uint8 = 1 << iota
 	IssueFixedFlags
 )
+
+type GitOptions struct {
+	Use         bool    `json:"use" yaml:"use" toml:"use"`
+	Ignore      *bool   `json:"ignore,omitempty" yaml:"ignore,omitempty" toml:"ignore,omitempty"`
+	ChangedOnly *bool   `json:"changedOnly,omitempty" yaml:"changedOnly,omitempty" toml:"changedOnly,omitempty"`
+	StagedOnly  *bool   `json:"stagedOnly,omitempty" yaml:"stagedOnly,omitempty" toml:"stagedOnly,omitempty"`
+	Branch      *string `json:"branch,omitempty" yaml:"branch,omitempty" toml:"branch,omitempty"`
+	Root        *string `json:"root,omitempty" yaml:"root,omitempty" toml:"root,omitempty"`
+}
 
 type GoFileOptions struct {
 	Exclude     *[]string `json:"exclude,omitempty" yaml:"exclude,omitempty" toml:"exclude,omitempty"`

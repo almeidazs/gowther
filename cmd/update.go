@@ -42,7 +42,7 @@ func update(ctx context.Context) error {
 
 	if !found || latest.LessOrEqual(rootCmd.Version) {
 		fmt.Printf("You're already running the latest version (%s)\n", rootCmd.Version)
-	
+
 		return nil
 	}
 
