@@ -15,8 +15,9 @@ var registry = map[uint16]RuleMetadata{
 	ErrorNotWrappedID:   {ID: ErrorNotWrappedID, Name: "error-not-wrapped", Template: "error returned from external package is not wrapped"},
 
 	// --- IMPORTS ---
-	NoDotImportsID:       {ID: NoDotImportsID, Name: "no-dot-imports", Template: "imports should not be named with '.'"},
-	DisallowedPackagesID: {ID: DisallowedPackagesID, Name: "disallowed-packages", Template: "usage of package %q is disallowed"},
+	NoDotImportsID:         {ID: NoDotImportsID, Name: "no-dot-imports", Template: "imports should not be named with '.'"},
+	DisallowedPackagesID:   {ID: DisallowedPackagesID, Name: "disallowed-packages", Template: "usage of package %q is disallowed"},
+	RedundantImportAliasID: {ID: RedundantImportAliasID, Name: "redundant-import-alias", Template: "usage of alias %s is redundant"},
 
 	// --- BEST PRACTICES ---
 	NoDeferInLoopID:          {ID: NoDeferInLoopID, Name: "no-defer-in-loop", Template: "defer statements should not be used inside loops"},
@@ -71,6 +72,7 @@ func FormatMessage(issue Issue) string {
 		ReceiverNameID,
 		ExportedIdentifiersID,
 		ImportedIdentifiersID,
+		RedundantImportAliasID,
 		NoMagicNumbersID,
 		DisallowedPackagesID:
 		return fmt.Sprintf(meta.Template, issue.ArgStr1)

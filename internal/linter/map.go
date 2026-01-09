@@ -39,6 +39,10 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if imp.DisallowedPackages != nil {
 			register(&imports.DisallowedPackagesRule{})
 		}
+
+		if imp.RedundantImportAlias != nil {
+			register(&imports.RedundantImportAliasRule{})
+		}
 	}
 
 	if err := r.Errors; err != nil && err.Use {

@@ -234,6 +234,7 @@ const (
 
 	NoDotImportsID
 	DisallowedPackagesID
+	RedundantImportAliasID
 
 	// BEST PRACTICES
 
