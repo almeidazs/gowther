@@ -3,7 +3,9 @@ package errs
 import (
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/serenitysz/serenity/internal/rules"
 )
@@ -54,6 +56,14 @@ func (r *ErrorStringFormatRule) Run(runner *rules.Runner, node ast.Node) {
 			continue
 		}
 
+		if runner.Cfg.ShouldAutofix() {
+			runner.Modified = true
+
+			lit.Value = strconv.Quote(fixErrorString(msg))
+
+			return
+		}
+
 		*runner.IssuesCount++
 		*runner.Issues = append(*runner.Issues, rules.Issue{
 			ArgStr1:  msg,
@@ -62,4 +72,25 @@ func (r *ErrorStringFormatRule) Run(runner *rules.Runner, node ast.Node) {
 			Severity: rules.ParseSeverity(cfg.ErrorStringFormat.Severity),
 		})
 	}
+}
+
+func fixErrorString(s string) string {
+	if s == "" {
+		return s
+	}
+
+	for len(s) > 0 {
+		last := s[len(s)-1]
+
+		if strings.ContainsRune(".!?:;", rune(last)) {
+			s = s[:len(s)-1]
+		} else {
+			break
+		}
+	}
+
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+
+	return string(r)
 }
