@@ -45,6 +45,9 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if err.ErrorStringFormat != nil {
 			register(&errs.ErrorStringFormatRule{})
 		}
+		if err.ErrorNotWrapped != nil {
+			register(&errs.ErrorNotWrappedRule{})
+		}
 	}
 
 	if bp := r.BestPractices; bp != nil && bp.Use {
