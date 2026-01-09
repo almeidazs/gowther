@@ -210,7 +210,7 @@ type BannedCharsRule struct {
 
 type AmbiguousReturnsRule struct {
 	Severity           string `json:"severity" yaml:"severity" toml:"severity"`
-	MaxUnnamedSameType *uint8 `json:"maxUnnamedSameType,omitempty" yaml:"maxUnnamedSameType,omitempty" toml:"maxUnnamedSameType,omitempty"`
+	MaxUnnamedSameType *int   `json:"maxUnnamedSameType,omitempty" yaml:"maxUnnamedSameType,omitempty" toml:"maxUnnamedSameType,omitempty"`
 }
 
 type DisallowedPackagesRule struct {
@@ -252,6 +252,7 @@ const (
 	UnusedReceiverID
 	UnusedParamsID
 	EmptyBlockID
+	AmbiguousReturnID
 
 	// COMPLEXITY
 

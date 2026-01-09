@@ -95,6 +95,10 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if crr.EmptyBlock != nil {
 			register(&correctness.EmptyBlockRule{})
 		}
+
+		if crr.AmbiguousReturns != nil {
+			register(&correctness.AmbiguousReturnRule{})
+		}
 	}
 
 	if n := r.Naming; n != nil && n.Use {

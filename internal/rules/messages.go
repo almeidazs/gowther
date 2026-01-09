@@ -30,9 +30,10 @@ var registry = map[uint16]RuleMetadata{
 	AlwaysPreferConstID:      {ID: AlwaysPreferConstID, Name: "always-prefer-const", Template: "variable %q should be a constant"},
 
 	// --- CORRECTNESS ---
-	UnusedReceiverID: {ID: UnusedReceiverID, Name: "unused-receiver", Template: "method receiver %q is not used inside the function"},
-	UnusedParamsID:   {ID: UnusedParamsID, Name: "unused-params", Template: "parameter %q is unused"},
-	EmptyBlockID:     {ID: EmptyBlockID, Name: "empty-block", Template: "this block is empty, consider removing or adding a comment"},
+	UnusedReceiverID:  {ID: UnusedReceiverID, Name: "unused-receiver", Template: "method receiver %q is not used inside the function"},
+	UnusedParamsID:    {ID: UnusedParamsID, Name: "unused-params", Template: "parameter %q is unused"},
+	EmptyBlockID:      {ID: EmptyBlockID, Name: "empty-block", Template: "this block is empty, consider removing or adding a comment"},
+	AmbiguousReturnID: RuleMetadata{ID: AmbiguousReturnID, Name: "ambiguous-return", Template: "function returns %d unnamed values of type string (max allowed: %d)"},
 
 	// --- COMPLEXITY ---
 	MaxFuncLinesID:         {ID: MaxFuncLinesID, Name: "max-func-lines", Template: "function exceeds the maximum line limit of %d (actual: %d)"},
@@ -58,7 +59,7 @@ func FormatMessage(issue Issue) string {
 	}
 
 	switch issue.ID {
-	case MaxParamsID, MaxFuncLinesID, CyclomaticComplexityID:
+	case MaxParamsID, MaxFuncLinesID, CyclomaticComplexityID, AmbiguousReturnID:
 		return fmt.Sprintf(meta.Template, issue.ArgInt1, issue.ArgInt2)
 
 	case MaxNestingDepthID:
