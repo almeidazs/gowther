@@ -27,7 +27,7 @@ func (r *PreferIncDecRule) Run(runner *rules.Runner, node ast.Node) {
 	}
 
 	style := runner.Cfg.Linter.Rules.Style
-	
+
 	if style == nil || !style.Use || style.PreferIncDec == nil {
 		return
 	}

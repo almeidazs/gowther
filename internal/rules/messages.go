@@ -31,10 +31,11 @@ var registry = map[uint16]RuleMetadata{
 	GetMustReturnValueID:     RuleMetadata{ID: GetMustReturnValueID, Name: "get-must-return-value", Template: `functions prefixed with "Get" must return at least one non-error value`},
 
 	// --- CORRECTNESS ---
-	UnusedReceiverID:  {ID: UnusedReceiverID, Name: "unused-receiver", Template: "method receiver %q is not used inside the function"},
-	UnusedParamsID:    {ID: UnusedParamsID, Name: "unused-params", Template: "parameter %q is unused"},
-	EmptyBlockID:      {ID: EmptyBlockID, Name: "empty-block", Template: "this block is empty, consider removing or adding a comment"},
-	AmbiguousReturnID: RuleMetadata{ID: AmbiguousReturnID, Name: "ambiguous-return", Template: "function returns %d unnamed values of type string (max allowed: %d)"},
+	UnusedReceiverID:         {ID: UnusedReceiverID, Name: "unused-receiver", Template: "method receiver %q is not used inside the function"},
+	UnusedParamsID:           {ID: UnusedParamsID, Name: "unused-params", Template: "parameter %q is unused"},
+	EmptyBlockID:             {ID: EmptyBlockID, Name: "empty-block", Template: "this block is empty, consider removing or adding a comment"},
+	AmbiguousReturnID:        RuleMetadata{ID: AmbiguousReturnID, Name: "ambiguous-return", Template: "function returns %d unnamed values of type string (max allowed: %d)"},
+	BoolLiteralExpressionsID: RuleMetadata{ID: BoolLiteralExpressionsID, Name: "boolean-literal-expressions", Template: "Do not use boolean literal expressions when possible"},
 
 	// --- COMPLEXITY ---
 	MaxFuncLinesID:         {ID: MaxFuncLinesID, Name: "max-func-lines", Template: "function exceeds the maximum line limit of %d (actual: %d)"},

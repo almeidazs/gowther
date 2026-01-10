@@ -109,6 +109,10 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if crr.AmbiguousReturns != nil {
 			register(&correctness.AmbiguousReturnRule{})
 		}
+
+		if crr.BoolLiteralExpressions != nil {
+			register(&correctness.BooleanLiteralExpressionsRule{})
+		}
 	}
 
 	if n := r.Naming; n != nil && n.Use {

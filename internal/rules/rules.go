@@ -254,6 +254,7 @@ const (
 	UnusedParamsID
 	EmptyBlockID
 	AmbiguousReturnID
+	BoolLiteralExpressionsID
 
 	// COMPLEXITY
 
