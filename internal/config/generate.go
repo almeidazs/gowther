@@ -43,6 +43,7 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 		oneMB           int64  = 1 * 1024 * 1024
 		maxParams       uint16 = 4
 		maxFuncLines    uint16 = 40
+		maxLineLength   uint16 = 80
 		maxNesting      uint16 = 3
 		maxCyclomatic   uint16 = 8
 		receiverMaxSize        = 1
@@ -132,6 +133,10 @@ func GenStrictDefaultConfig(autofix *bool) *rules.LinterOptions {
 					MaxFuncLines: &rules.AnyMaxValueBasedRule{
 						Severity: "error",
 						Max:      &maxFuncLines,
+					},
+					MaxLineLength: &rules.AnyMaxValueBasedRule{
+						Severity: "error",
+						Max:      &maxLineLength,
 					},
 					MaxNestingDepth: &rules.AnyMaxValueBasedRule{
 						Severity: "error",

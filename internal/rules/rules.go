@@ -164,6 +164,7 @@ type CorrectnessRulesGroup struct {
 type ComplexityRulesGroup struct {
 	Use                  bool                  `json:"use" yaml:"use" toml:"use"`
 	MaxFuncLines         *AnyMaxValueBasedRule `json:"maxFuncLines,omitempty" yaml:"maxFuncLines,omitempty" toml:"maxFuncLines,omitempty"`
+	MaxLineLength        *AnyMaxValueBasedRule `json:"maxLineLength,omitempty" yaml:"maxLineLength,omitempty" toml:"maxLineLength,omitempty"`
 	MaxNestingDepth      *AnyMaxValueBasedRule `json:"maxNestingDepth,omitempty" yaml:"maxNestingDepth,omitempty" toml:"maxNestingDepth,omitempty"`
 	CyclomaticComplexity *AnyMaxValueBasedRule `json:"cyclomaticComplexity,omitempty" yaml:"cyclomaticComplexity,omitempty" toml:"cyclomaticComplexity,omitempty"`
 }
@@ -259,6 +260,7 @@ const (
 	// COMPLEXITY
 
 	MaxFuncLinesID
+	MaxLineLengthID
 	MaxNestingDepthID
 	CyclomaticComplexityID
 

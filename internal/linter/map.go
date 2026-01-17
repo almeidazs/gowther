@@ -99,6 +99,9 @@ func GetActiveRulesMap(cfg *rules.LinterOptions) map[reflect.Type][]rules.Rule {
 		if cp.MaxFuncLines != nil {
 			register(&complexity.CheckMaxFuncLinesRule{})
 		}
+		if cp.MaxLineLength != nil {
+			register(&complexity.CheckMaxLineLengthRule{})
+		}
 	}
 
 	if crr := r.Correctness; crr != nil && crr.Use {
