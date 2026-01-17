@@ -23,7 +23,7 @@ go mod download
 
 ```bash
 go test ./...
-go run ./cmd/serenity
+go run .
 ```
 
 ## Code style
