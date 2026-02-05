@@ -1,0 +1,28 @@
+name: Format
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "The following files are not properly formatted:"
+            gofmt -l .
+            echo ""
+            echo "Run 'gofmt -w .' to fix formatting"
+            exit 1
+          fi
